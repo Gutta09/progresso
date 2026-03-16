@@ -12,6 +12,17 @@
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Create GitHub progresso repo",
+			"type": "shell",
+			"command": "python3",
+			"args": [
+				"scripts/create_github_repo.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }
