@@ -107,26 +107,26 @@ export default async function BoardPage({
             </Link>
             <Link
               href="/board?view=board"
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-200 hover:-translate-y-0.5 hover:bg-zinc-100"
+              className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900"
             >
               Board view
             </Link>
             <Link
               href="/board?view=list"
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-200 hover:-translate-y-0.5 hover:bg-zinc-100"
+              className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900"
             >
               List view
             </Link>
             <Link
               href="/board/calendar"
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-200 hover:-translate-y-0.5 hover:bg-zinc-100"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900"
             >
               <CalendarDays className="h-4 w-4" />
               Calendar
             </Link>
             <Link
               href="/board/database"
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-200 hover:-translate-y-0.5 hover:bg-zinc-100"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900"
             >
               <Database className="h-4 w-4" />
               Data explorer
@@ -145,7 +145,7 @@ export default async function BoardPage({
         </aside>
 
         <section className="space-y-4">
-          <header className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <header className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition duration-300 hover:shadow-md">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Project</p>
@@ -267,7 +267,7 @@ export default async function BoardPage({
 
               <button
                 type="submit"
-                className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 lg:mt-6"
+                className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:bg-zinc-800 hover:shadow-md active:scale-95"
               >
                 Add
               </button>
@@ -296,7 +296,7 @@ export default async function BoardPage({
                     <div className="space-y-3">
                       {columnTasks.length ? (
                         columnTasks.map((task) => (
-                          <div key={task.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-sm">
+                          <div key={task.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-md hover:border-zinc-300">
                             <form action={`/api/tasks/${task.id}/update`} method="post" className="space-y-2.5">
                               <input
                                 name="title"
@@ -345,7 +345,7 @@ export default async function BoardPage({
                                 </select>
                                 <button
                                   type="submit"
-                                  className="rounded-md bg-zinc-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-zinc-800"
+                                  className="rounded-md bg-zinc-900 px-3 py-2 text-xs font-medium text-white transition duration-300 hover:bg-zinc-800 hover:shadow-sm active:scale-95"
                                 >
                                   Save
                                 </button>
@@ -364,7 +364,7 @@ export default async function BoardPage({
                               <form action={`/api/tasks/${task.id}/delete`} method="post">
                                 <button
                                   type="submit"
-                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 transition hover:text-zinc-900"
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 transition duration-300 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded-md"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                   Delete
@@ -434,7 +434,7 @@ export default async function BoardPage({
                               <input type="hidden" name="status" value={task.status} />
                               <button
                                 type="submit"
-                                className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800"
+                                className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white transition duration-300 hover:bg-zinc-800 hover:shadow-sm active:scale-95"
                               >
                                 Save details
                               </button>
@@ -459,7 +459,7 @@ export default async function BoardPage({
                               </select>
                               <button
                                 type="submit"
-                                className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                                className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 transition duration-300 hover:bg-zinc-100 hover:border-zinc-400 active:scale-95"
                               >
                                 Update status
                               </button>
@@ -473,7 +473,7 @@ export default async function BoardPage({
                             <form action={`/api/tasks/${task.id}/delete`} method="post">
                               <button
                                 type="submit"
-                                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 transition duration-300 hover:border-red-300 hover:bg-red-50 hover:text-red-600"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                                 Delete
