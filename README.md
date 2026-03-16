@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Progresso
 
-## Getting Started
+Progresso is a web-based task management system built around a Kanban workflow. It supports secure user authentication and full task CRUD operations across the default columns **To Do**, **In Progress**, and **Done**.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Next.js 16 with App Router
+- TypeScript
+- Tailwind CSS 4
+- Mongoose ODM
+- MongoDB
+- Cookie-based session authentication with hashed passwords
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Implemented Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- User registration with unique usernames
+- User login and logout
+- Password hashing with `bcryptjs`
+- Protected dashboard per authenticated user
+- Task creation with title, description, and status
+- Task editing and status updates
+- Task deletion
+- Responsive three-column Kanban layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local Setup
 
-## Learn More
+1. Install dependencies:
 
-To learn more about Next.js, take a look at the following resources:
+	`npm install`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Ensure MongoDB is running locally (or set a cloud URI).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Start the development server:
 
-## Deploy on Vercel
+	`npm run dev`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. Open `http://localhost:3000` in the browser.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Environment Variables
+
+Create a `.env` file with the following values:
+
+`MONGODB_URI="mongodb://127.0.0.1:27017/progresso"`
+
+`SESSION_SECRET="replace-with-a-long-random-secret"`
+
+## Project Notes
+
+- Each user only sees and manages their own tasks.
+- Status updates are handled through the edit form on each task card.
+- Data is stored in MongoDB using Mongoose models.
+
+## Validation
+
+- `npm run lint`
+- `npm run build`
