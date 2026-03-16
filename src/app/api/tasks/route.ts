@@ -13,6 +13,8 @@ export async function POST(request: Request) {
     title: String(formData.get("title") ?? ""),
     description: String(formData.get("description") ?? ""),
     status: String(formData.get("status") ?? "TODO"),
+    priority: String(formData.get("priority") ?? "MEDIUM"),
+    dueDate: String(formData.get("dueDate") ?? ""),
   };
 
   const parsed = taskSchema.safeParse(submitted);
@@ -29,6 +31,7 @@ export async function POST(request: Request) {
 
   await Task.create({
     ...parsed.data,
+    dueDate: parsed.data.dueDate ? new Date(`${parsed.data.dueDate}T00:00:00.000Z`) : undefined,
     userId: new mongoose.Types.ObjectId(session.userId),
   });
 

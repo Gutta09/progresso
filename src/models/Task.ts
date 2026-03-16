@@ -1,5 +1,5 @@
 import { Schema, model, models, type InferSchemaType, type Types } from "mongoose";
-import { taskStatuses } from "@/lib/validators";
+import { taskPriorities, taskStatuses } from "@/lib/validators";
 
 const taskSchema = new Schema(
   {
@@ -21,6 +21,16 @@ const taskSchema = new Schema(
       default: "TODO",
       required: true,
     },
+    priority: {
+      type: String,
+      enum: taskPriorities,
+      default: "MEDIUM",
+      required: true,
+    },
+    dueDate: {
+      type: Date,
+      required: false,
+    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -34,6 +44,7 @@ const taskSchema = new Schema(
 );
 
 taskSchema.index({ userId: 1, status: 1 });
+taskSchema.index({ userId: 1, dueDate: 1 });
 
 export type TaskDocument = Omit<InferSchemaType<typeof taskSchema>, "userId"> & {
   _id: string;

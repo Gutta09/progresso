@@ -6,7 +6,7 @@ import { requireSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
-import { taskStatusLabels, type TaskStatusValue } from "@/lib/validators";
+import { taskPriorityLabels, taskStatusLabels, type TaskPriorityValue, type TaskStatusValue } from "@/lib/validators";
 
 const statusOrder: TaskStatusValue[] = ["TODO", "IN_PROGRESS", "DONE"];
 
@@ -21,6 +21,8 @@ type StoredTask = {
   title: string;
   description: string;
   status: TaskStatusValue;
+  priority: TaskPriorityValue;
+  dueDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -49,6 +51,8 @@ export default async function DatabasePage() {
     title: task.title,
     description: task.description,
     status: task.status as TaskStatusValue,
+    priority: (task.priority ?? "MEDIUM") as TaskPriorityValue,
+    dueDate: task.dueDate ? new Date(task.dueDate) : null,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
   }));
@@ -163,6 +167,8 @@ export default async function DatabasePage() {
                   <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                     <th className="px-3 py-3">Title</th>
                     <th className="px-3 py-3">Status</th>
+                    <th className="px-3 py-3">Priority</th>
+                    <th className="px-3 py-3">Due</th>
                     <th className="px-3 py-3">Description</th>
                     <th className="px-3 py-3">Created</th>
                     <th className="px-3 py-3">Updated</th>
@@ -174,6 +180,10 @@ export default async function DatabasePage() {
                     <tr key={task.id} className="align-top text-slate-700">
                       <td className="px-3 py-4 font-semibold text-slate-950">{task.title}</td>
                       <td className="px-3 py-4">{taskStatusLabels[task.status]}</td>
+                      <td className="px-3 py-4">{taskPriorityLabels[task.priority]}</td>
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        {task.dueDate ? new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate) : "—"}
+                      </td>
                       <td className="max-w-md px-3 py-4 text-slate-600">{task.description}</td>
                       <td className="px-3 py-4 whitespace-nowrap">
                         {new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(task.createdAt)}

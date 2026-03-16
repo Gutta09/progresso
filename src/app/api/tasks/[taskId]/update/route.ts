@@ -22,6 +22,8 @@ export async function POST(
     title: String(formData.get("title") ?? ""),
     description: String(formData.get("description") ?? ""),
     status: String(formData.get("status") ?? "TODO"),
+    priority: String(formData.get("priority") ?? "MEDIUM"),
+    dueDate: String(formData.get("dueDate") ?? ""),
   };
 
   const parsed = taskSchema.safeParse(submitted);
@@ -47,7 +49,10 @@ export async function POST(
     _id: taskId,
     userId: userObjectId,
   }, {
-    $set: parsed.data,
+    $set: {
+      ...parsed.data,
+      dueDate: parsed.data.dueDate ? new Date(`${parsed.data.dueDate}T00:00:00.000Z`) : null,
+    },
   });
 
   if (!updated.matchedCount) {
