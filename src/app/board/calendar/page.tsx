@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
+import { User } from "@/models/User";
 import { taskPriorityLabels, taskStatusLabels, type TaskPriorityValue, type TaskStatusValue } from "@/lib/validators";
 
 type SearchParams = Promise<{
@@ -16,6 +17,7 @@ type CalendarTask = {
   title: string;
   status: TaskStatusValue;
   priority: TaskPriorityValue;
+  assigneeName: string | null;
   dueDate: Date;
 };
 
@@ -74,6 +76,14 @@ export default async function CalendarPage({
     .sort({ dueDate: 1, updatedAt: -1 })
     .lean();
 
+  // Fetch all assignees at once
+  const assigneeIds = [...new Set(dueTasks.map(t => t.assigneeId).filter(Boolean))];
+  const assignees = assigneeIds.length > 0 
+    ? await User.find({ _id: { $in: assigneeIds } }).lean()
+    : [];
+  
+  const assigneeMap = new Map(assignees.map(u => [String(u._id), u.username]));
+
   const tasks: CalendarTask[] = dueTasks
     .filter((task) => Boolean(task.dueDate))
     .map((task) => ({
@@ -81,6 +91,7 @@ export default async function CalendarPage({
       title: task.title,
       status: task.status as TaskStatusValue,
       priority: (task.priority ?? "MEDIUM") as TaskPriorityValue,
+      assigneeName: task.assigneeId ? assigneeMap.get(String(task.assigneeId)) ?? null : null,
       dueDate: new Date(task.dueDate as Date),
     }));
 
@@ -182,10 +193,10 @@ export default async function CalendarPage({
                       <div
                         key={task.id}
                         className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[11px] text-zinc-700 transition duration-200 hover:-translate-y-0.5 hover:bg-white"
-                        title={`${task.title} • ${taskStatusLabels[task.status]} • ${taskPriorityLabels[task.priority]}`}
+                        title={`${task.title} • ${taskStatusLabels[task.status]} • ${taskPriorityLabels[task.priority]}${task.assigneeName ? ` • ${task.assigneeName}` : ""}`}
                       >
                         <p className="truncate font-medium">{task.title}</p>
-                        <p className="truncate text-zinc-500">{taskStatusLabels[task.status]} • {taskPriorityLabels[task.priority]}</p>
+                        <p className="truncate text-zinc-500">{taskStatusLabels[task.status]} • {taskPriorityLabels[task.priority]}{task.assigneeName ? ` • ${task.assigneeName}` : ""}</p>
                       </div>
                     ))}
                     {dayTasks.length > 3 ? (

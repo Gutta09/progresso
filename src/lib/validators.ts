@@ -48,6 +48,16 @@ export const taskSchema = z.object({
     .max(500, "Description must be 500 characters or fewer."),
   status: z.enum(taskStatuses),
   priority: z.enum(taskPriorities),
+  assigneeId: z.preprocess(
+    (value) => {
+      if (value === null || value === undefined) {
+        return undefined;
+      }
+      const raw = String(value).trim();
+      return raw.length ? raw : undefined;
+    },
+    z.string().regex(/^[0-9a-f]{24}$/i, "Invalid assignee.").optional(),
+  ),
   dueDate: z.preprocess(
     (value) => {
       if (value === null || value === undefined) {

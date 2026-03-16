@@ -23,6 +23,7 @@ export async function POST(
     description: String(formData.get("description") ?? ""),
     status: String(formData.get("status") ?? "TODO"),
     priority: String(formData.get("priority") ?? "MEDIUM"),
+    assigneeId: String(formData.get("assigneeId") ?? ""),
     dueDate: String(formData.get("dueDate") ?? ""),
   };
 
@@ -51,6 +52,7 @@ export async function POST(
   }, {
     $set: {
       ...parsed.data,
+      assigneeId: parsed.data.assigneeId ? new mongoose.Types.ObjectId(parsed.data.assigneeId) : null,
       dueDate: parsed.data.dueDate ? new Date(`${parsed.data.dueDate}T00:00:00.000Z`) : null,
     },
   });

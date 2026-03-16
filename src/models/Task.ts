@@ -31,6 +31,11 @@ const taskSchema = new Schema(
       type: Date,
       required: false,
     },
+    assigneeId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",

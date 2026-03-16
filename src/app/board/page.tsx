@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
+import { User } from "@/models/User";
 import { taskPriorityLabels, taskStatusLabels, type TaskPriorityValue, type TaskStatusValue } from "@/lib/validators";
 
 const statusOrder: TaskStatusValue[] = ["TODO", "IN_PROGRESS", "DONE"];
@@ -33,6 +34,8 @@ type BoardTask = {
   status: TaskStatusValue;
   priority: TaskPriorityValue;
   dueDate: Date | null;
+  assigneeId: string | null;
+  assigneeName: string | null;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
@@ -55,6 +58,14 @@ export default async function BoardPage({
   const userObjectId = new mongoose.Types.ObjectId(session.userId);
   const taskDocs = await Task.find({ userId: userObjectId }).sort({ updatedAt: -1 }).lean();
 
+  // Fetch all assignees at once
+  const assigneeIds = [...new Set(taskDocs.map(t => t.assigneeId).filter(Boolean))];
+  const assignees = assigneeIds.length > 0 
+    ? await User.find({ _id: { $in: assigneeIds } }).lean()
+    : [];
+  
+  const assigneeMap = new Map(assignees.map(u => [String(u._id), u.username]));
+
   const tasks: BoardTask[] = taskDocs.map((task) => ({
     id: String(task._id),
     title: task.title,
@@ -62,6 +73,8 @@ export default async function BoardPage({
     status: task.status as TaskStatusValue,
     priority: (task.priority ?? "MEDIUM") as TaskPriorityValue,
     dueDate: task.dueDate ? new Date(task.dueDate) : null,
+    assigneeId: task.assigneeId ? String(task.assigneeId) : null,
+    assigneeName: task.assigneeId ? assigneeMap.get(String(task.assigneeId)) ?? null : null,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
     userId: String(task.userId),
@@ -206,7 +219,7 @@ export default async function BoardPage({
               <h3 className="text-base font-semibold">Add task</h3>
             </div>
 
-            <form action="/api/tasks" method="post" className="grid gap-3 lg:grid-cols-[1.1fr_1.5fr_170px_170px_auto] lg:items-start">
+            <form action="/api/tasks" method="post" className="grid gap-3 lg:grid-cols-[1.1fr_1.5fr_120px_120px_120px_auto] lg:items-start">
               <label className="block space-y-1.5">
                 <span className="text-xs font-medium text-zinc-600">Title</span>
                 <input
@@ -265,9 +278,21 @@ export default async function BoardPage({
                 />
               </label>
 
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-zinc-600">Assign to</span>
+                <select
+                  name="assigneeId"
+                  defaultValue=""
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-zinc-400"
+                >
+                  <option value="">Unassigned</option>
+                  <option value={session.userId}>{session.username}</option>
+                </select>
+              </label>
+
               <button
                 type="submit"
-                className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:bg-zinc-800 hover:shadow-md active:scale-95"
+                className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:bg-zinc-800 hover:shadow-md active:scale-95 lg:mt-6"
               >
                 Add
               </button>
@@ -313,7 +338,7 @@ export default async function BoardPage({
                                 required
                               />
 
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-3 gap-2">
                                 <select
                                   name="priority"
                                   defaultValue={task.priority}
@@ -329,6 +354,14 @@ export default async function BoardPage({
                                   defaultValue={task.dueDate ? task.dueDate.toISOString().slice(0, 10) : ""}
                                   className="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-2 text-sm outline-none transition focus:border-zinc-400"
                                 />
+                                <select
+                                  name="assigneeId"
+                                  defaultValue={task.assigneeId ?? ""}
+                                  className="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-2 text-sm outline-none transition focus:border-zinc-400"
+                                >
+                                  <option value="">Unassigned</option>
+                                  <option value={session.userId}>{session.username}</option>
+                                </select>
                               </div>
 
                               <div className="grid grid-cols-[1fr_auto] items-center gap-2">
@@ -359,6 +392,7 @@ export default async function BoardPage({
                                   <Flag className="h-3 w-3" />
                                   {taskPriorityLabels[task.priority]}
                                   {task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}
+                                  {task.assigneeName ? ` • Assigned to ${task.assigneeName}` : ""}
                                 </p>
                               </div>
                               <form action={`/api/tasks/${task.id}/delete`} method="post">
@@ -414,7 +448,7 @@ export default async function BoardPage({
                                 className="w-full rounded-md border border-zinc-200 px-2.5 py-2 text-sm outline-none focus:border-zinc-400"
                                 required
                               />
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-3 gap-2">
                                 <select
                                   name="priority"
                                   defaultValue={task.priority}
@@ -430,6 +464,14 @@ export default async function BoardPage({
                                   defaultValue={task.dueDate ? task.dueDate.toISOString().slice(0, 10) : ""}
                                   className="w-full rounded-md border border-zinc-200 px-2.5 py-2 text-sm outline-none focus:border-zinc-400"
                                 />
+                                <select
+                                  name="assigneeId"
+                                  defaultValue={task.assigneeId ?? ""}
+                                  className="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-zinc-400"
+                                >
+                                  <option value="">Unassigned</option>
+                                  <option value={session.userId}>{session.username}</option>
+                                </select>
                               </div>
                               <input type="hidden" name="status" value={task.status} />
                               <button
@@ -446,6 +488,7 @@ export default async function BoardPage({
                               <input type="hidden" name="description" value={task.description} />
                               <input type="hidden" name="priority" value={task.priority} />
                               <input type="hidden" name="dueDate" value={task.dueDate ? task.dueDate.toISOString().slice(0, 10) : ""} />
+                              <input type="hidden" name="assigneeId" value={task.assigneeId ?? ""} />
                               <select
                                 name="status"
                                 defaultValue={task.status}
@@ -467,7 +510,7 @@ export default async function BoardPage({
                           </td>
                           <td className="px-3 py-3 text-xs text-zinc-500 whitespace-nowrap">
                             <p>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(task.updatedAt)}</p>
-                            <p className="mt-1">{taskPriorityLabels[task.priority]}{task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}</p>
+                            <p className="mt-1">{taskPriorityLabels[task.priority]}{task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}{task.assigneeName ? ` • ${task.assigneeName}` : ""}</p>
                           </td>
                           <td className="px-3 py-3">
                             <form action={`/api/tasks/${task.id}/delete`} method="post">

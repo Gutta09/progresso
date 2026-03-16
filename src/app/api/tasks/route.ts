@@ -14,6 +14,7 @@ export async function POST(request: Request) {
     description: String(formData.get("description") ?? ""),
     status: String(formData.get("status") ?? "TODO"),
     priority: String(formData.get("priority") ?? "MEDIUM"),
+    assigneeId: String(formData.get("assigneeId") ?? ""),
     dueDate: String(formData.get("dueDate") ?? ""),
   };
 
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
 
   await Task.create({
     ...parsed.data,
+    assigneeId: parsed.data.assigneeId ? new mongoose.Types.ObjectId(parsed.data.assigneeId) : undefined,
     dueDate: parsed.data.dueDate ? new Date(`${parsed.data.dueDate}T00:00:00.000Z`) : undefined,
     userId: new mongoose.Types.ObjectId(session.userId),
   });
