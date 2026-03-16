@@ -61,12 +61,23 @@ export async function getSession(): Promise<Session | null> {
 
   try {
     const verified = await jwtVerify<JwtPayload>(token, secretKey);
+    const userId = verified.payload.userId;
+    const username = verified.payload.username;
+
+    if (
+      typeof userId !== "string"
+      || !/^[0-9a-f]{24}$/i.test(userId)
+      || typeof username !== "string"
+      || username.length === 0
+    ) {
+      return null;
+    }
+
     return {
-      userId: verified.payload.userId,
-      username: verified.payload.username,
+      userId,
+      username,
     };
   } catch {
-    await clearSession();
     return null;
   }
 }

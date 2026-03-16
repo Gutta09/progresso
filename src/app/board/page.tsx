@@ -1,8 +1,11 @@
-import { CheckCircle2, ClipboardList, KanbanSquare, LoaderCircle, LogOut, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, ClipboardList, Database, KanbanSquare, LoaderCircle, LogOut, Plus, Trash2 } from "lucide-react";
+import mongoose from "mongoose";
 import { requireSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { taskStatusLabels, type TaskStatusValue } from "@/lib/validators";
+import { redirect } from "next/navigation";
 
 const statusOrder: TaskStatusValue[] = ["TODO", "IN_PROGRESS", "DONE"];
 const statusStyles: Record<TaskStatusValue, string> = {
@@ -41,7 +44,15 @@ export default async function BoardPage({
 
   await connectToDatabase();
 
-  const taskDocs = await Task.find({ userId: session.userId }).sort({ updatedAt: -1 }).lean();
+  let userObjectId: mongoose.Types.ObjectId;
+  if (typeof session.userId === "string" && session.userId.match(/^[0-9a-f]{24}$/i)) {
+    userObjectId = new mongoose.Types.ObjectId(session.userId);
+  } else {
+    // Invalid session format, clear and redirect
+    redirect("/auth");
+  }
+  
+  const taskDocs = await Task.find({ userId: userObjectId }).sort({ updatedAt: -1 }).lean();
   const tasks: BoardTask[] = taskDocs.map((task) => ({
     id: String(task._id),
     title: task.title,
@@ -82,6 +93,13 @@ export default async function BoardPage({
                 <span className="block text-xs uppercase tracking-[0.22em] text-slate-400">Total tasks</span>
                 <span className="mt-1 text-2xl font-semibold text-white">{tasks.length}</span>
               </div>
+              <Link
+                href="/board/database"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+              >
+                <Database className="h-4 w-4" />
+                View my data
+              </Link>
               <form action="/api/auth/logout" method="post">
                 <button
                   type="submit"

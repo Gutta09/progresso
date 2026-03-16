@@ -18,9 +18,16 @@ export async function POST(
 
   await connectToDatabase();
 
+  let userObjectId: mongoose.Types.ObjectId;
+  if (typeof session.userId === "string" && session.userId.match(/^[0-9a-f]{24}$/i)) {
+    userObjectId = new mongoose.Types.ObjectId(session.userId);
+  } else {
+    redirect(buildRedirectUrl("/board", { error: "Invalid session." }));
+  }
+
   const deleted = await Task.deleteOne({
     _id: taskId,
-    userId: session.userId,
+    userId: userObjectId,
   });
 
   if (!deleted.deletedCount) {
