@@ -36,6 +36,12 @@ const taskSchema = new Schema(
       ref: "User",
       required: false,
     },
+    section: {
+      type: String,
+      required: false,
+      default: "General",
+      trim: true,
+    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",

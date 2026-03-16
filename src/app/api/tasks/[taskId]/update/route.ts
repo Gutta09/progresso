@@ -23,6 +23,7 @@ export async function POST(
     description: String(formData.get("description") ?? ""),
     status: String(formData.get("status") ?? "TODO"),
     priority: String(formData.get("priority") ?? "MEDIUM"),
+    section: String(formData.get("section") ?? "General"),
     assigneeId: String(formData.get("assigneeId") ?? ""),
     dueDate: String(formData.get("dueDate") ?? ""),
   };

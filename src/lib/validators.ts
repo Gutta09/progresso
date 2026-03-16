@@ -48,6 +48,12 @@ export const taskSchema = z.object({
     .max(500, "Description must be 500 characters or fewer."),
   status: z.enum(taskStatuses),
   priority: z.enum(taskPriorities),
+  section: z
+    .string()
+    .trim()
+    .max(50, "Section name must be 50 characters or fewer.")
+    .optional()
+    .default("General"),
   assigneeId: z.preprocess(
     (value) => {
       if (value === null || value === undefined) {

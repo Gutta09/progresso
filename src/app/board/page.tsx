@@ -33,6 +33,7 @@ type BoardTask = {
   description: string;
   status: TaskStatusValue;
   priority: TaskPriorityValue;
+  section: string;
   dueDate: Date | null;
   assigneeId: string | null;
   assigneeName: string | null;
@@ -72,6 +73,7 @@ export default async function BoardPage({
     description: task.description,
     status: task.status as TaskStatusValue,
     priority: (task.priority ?? "MEDIUM") as TaskPriorityValue,
+    section: task.section ?? "General",
     dueDate: task.dueDate ? new Date(task.dueDate) : null,
     assigneeId: task.assigneeId ? String(task.assigneeId) : null,
     assigneeName: task.assigneeId ? assigneeMap.get(String(task.assigneeId)) ?? null : null,
@@ -85,10 +87,14 @@ export default async function BoardPage({
     ? tasks.filter((task) => (
       task.title.toLowerCase().includes(normalizedQuery)
       || task.description.toLowerCase().includes(normalizedQuery)
+      || task.section.toLowerCase().includes(normalizedQuery)
     ))
     : tasks;
 
   const activeView = params.view === "list" ? "list" : "board";
+
+  // Get unique sections from filtered tasks
+  const uniqueSections = [...new Set(filteredTasks.map(t => t.section))].sort();
 
   const groupedTasks = statusOrder.map((status) => ({
     status,
@@ -219,7 +225,7 @@ export default async function BoardPage({
               <h3 className="text-base font-semibold">Add task</h3>
             </div>
 
-            <form action="/api/tasks" method="post" className="grid gap-3 lg:grid-cols-[1.1fr_1.5fr_120px_120px_120px_auto] lg:items-start">
+            <form action="/api/tasks" method="post" className="grid gap-3 lg:grid-cols-[1.1fr_1.5fr_auto] lg:items-start">
               <label className="block space-y-1.5">
                 <span className="text-xs font-medium text-zinc-600">Title</span>
                 <input
@@ -238,6 +244,25 @@ export default async function BoardPage({
                   className="min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-zinc-400"
                   placeholder="Add details"
                   required
+                />
+              </label>
+
+              <div className="flex items-end gap-2">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:bg-zinc-800 hover:shadow-md active:scale-95 lg:mt-6"
+                >
+                  Add
+                </button>
+              </div>
+
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-zinc-600">Section</span>
+                <input
+                  name="section"
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-zinc-400"
+                  placeholder="e.g., General, Design, Development"
+                  defaultValue="General"
                 />
               </label>
 
@@ -289,13 +314,6 @@ export default async function BoardPage({
                   <option value={session.userId}>{session.username}</option>
                 </select>
               </label>
-
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:bg-zinc-800 hover:shadow-md active:scale-95 lg:mt-6"
-              >
-                Add
-              </button>
             </form>
           </section>
 
@@ -336,6 +354,14 @@ export default async function BoardPage({
                                 rows={3}
                                 className="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-2 text-sm outline-none transition focus:border-zinc-400"
                                 required
+                              />
+
+                              <input
+                                type="text"
+                                name="section"
+                                defaultValue={task.section}
+                                placeholder="e.g., General, Design, Development"
+                                className="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-2 text-sm outline-none transition focus:border-zinc-400"
                               />
 
                               <div className="grid grid-cols-3 gap-2">
@@ -392,7 +418,8 @@ export default async function BoardPage({
                                   <Flag className="h-3 w-3" />
                                   {taskPriorityLabels[task.priority]}
                                   {task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}
-                                  {task.assigneeName ? ` • Assigned to ${task.assigneeName}` : ""}
+                                  {task.assigneeName ? ` • ${task.assigneeName}` : ""}
+                                  {task.section && task.section !== "General" ? ` • ${task.section}` : ""}
                                 </p>
                               </div>
                               <form action={`/api/tasks/${task.id}/delete`} method="post">
@@ -448,6 +475,13 @@ export default async function BoardPage({
                                 className="w-full rounded-md border border-zinc-200 px-2.5 py-2 text-sm outline-none focus:border-zinc-400"
                                 required
                               />
+                              <input
+                                type="text"
+                                name="section"
+                                defaultValue={task.section}
+                                placeholder="Section"
+                                className="w-full rounded-md border border-zinc-200 px-2.5 py-2 text-sm outline-none focus:border-zinc-400"
+                              />
                               <div className="grid grid-cols-3 gap-2">
                                 <select
                                   name="priority"
@@ -486,6 +520,7 @@ export default async function BoardPage({
                             <form action={`/api/tasks/${task.id}/update`} method="post" className="space-y-2">
                               <input type="hidden" name="title" value={task.title} />
                               <input type="hidden" name="description" value={task.description} />
+                              <input type="hidden" name="section" value={task.section} />
                               <input type="hidden" name="priority" value={task.priority} />
                               <input type="hidden" name="dueDate" value={task.dueDate ? task.dueDate.toISOString().slice(0, 10) : ""} />
                               <input type="hidden" name="assigneeId" value={task.assigneeId ?? ""} />
@@ -510,7 +545,7 @@ export default async function BoardPage({
                           </td>
                           <td className="px-3 py-3 text-xs text-zinc-500 whitespace-nowrap">
                             <p>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(task.updatedAt)}</p>
-                            <p className="mt-1">{taskPriorityLabels[task.priority]}{task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}{task.assigneeName ? ` • ${task.assigneeName}` : ""}</p>
+                            <p className="mt-1">{taskPriorityLabels[task.priority]}{task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}{task.assigneeName ? ` • ${task.assigneeName}` : ""}{task.section && task.section !== "General" ? ` • ${task.section}` : ""}</p>
                           </td>
                           <td className="px-3 py-3">
                             <form action={`/api/tasks/${task.id}/delete`} method="post">
