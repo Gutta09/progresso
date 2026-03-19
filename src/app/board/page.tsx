@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, ClipboardList, Database, Flag, KanbanSquare, LayoutGrid, LayoutList, LoaderCircle, LogOut, MessageSquare, Plus, Search, Trash2 } from "lucide-react";
+import { CalendarDays, CheckCircle2, ClipboardList, Database, Flag, KanbanSquare, LayoutGrid, LayoutList, LoaderCircle, LogOut, Link as LinkIcon, MessageSquare, Plus, Search, Trash2 } from "lucide-react";
 import mongoose from "mongoose";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
@@ -39,6 +39,7 @@ type BoardTask = {
   assigneeId: string | null;
   assigneeName: string | null;
   commentCount: number;
+  dependencyCount: number;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
@@ -77,6 +78,12 @@ export default async function BoardPage({
   ]);
   const commentCountMap = new Map(commentCounts.map(c => [String(c._id), c.count]));
 
+  // Count dependencies for each task
+  const dependencyCounts = taskDocs.reduce((acc, task) => {
+    acc[String(task._id)] = (task.dependsOn?.length ?? 0);
+    return acc;
+  }, {} as Record<string, number>);
+
   const tasks: BoardTask[] = taskDocs.map((task) => ({
     id: String(task._id),
     title: task.title,
@@ -88,6 +95,7 @@ export default async function BoardPage({
     assigneeId: task.assigneeId ? String(task.assigneeId) : null,
     assigneeName: task.assigneeId ? assigneeMap.get(String(task.assigneeId)) ?? null : null,
     commentCount: commentCountMap.get(String(task._id)) ?? 0,
+    dependencyCount: dependencyCounts[String(task._id)] ?? 0,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
     userId: String(task.userId),
@@ -441,6 +449,12 @@ export default async function BoardPage({
                                       {task.commentCount}
                                     </span>
                                   ) : null}
+                                  {task.dependencyCount > 0 ? (
+                                    <span className="inline-flex items-center gap-1 text-zinc-600">
+                                      <LinkIcon className="h-3 w-3" />
+                                      {task.dependencyCount}
+                                    </span>
+                                  ) : null}
                                 </div>
                               </div>
                               <form action={`/api/tasks/${task.id}/delete`} method="post">
@@ -572,6 +586,12 @@ export default async function BoardPage({
                                 <span className="inline-flex items-center gap-1 text-zinc-600">
                                   <MessageSquare className="h-3 w-3" />
                                   {task.commentCount}
+                                </span>
+                              ) : null}
+                              {task.dependencyCount > 0 ? (
+                                <span className="inline-flex items-center gap-1 text-zinc-600">
+                                  <LinkIcon className="h-3 w-3" />
+                                  {task.dependencyCount}
                                 </span>
                               ) : null}
                             </div>
