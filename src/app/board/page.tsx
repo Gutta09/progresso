@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, ClipboardList, Database, Flag, KanbanSquare, LayoutGrid, LayoutList, LoaderCircle, LogOut, Plus, Search, Trash2 } from "lucide-react";
+import { CalendarDays, CheckCircle2, ClipboardList, Database, Flag, KanbanSquare, LayoutGrid, LayoutList, LoaderCircle, LogOut, MessageSquare, Plus, Search, Trash2 } from "lucide-react";
 import mongoose from "mongoose";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
+import { Comment } from "@/models/Comment";
 import { taskPriorityLabels, taskStatusLabels, type TaskPriorityValue, type TaskStatusValue } from "@/lib/validators";
 
 const statusOrder: TaskStatusValue[] = ["TODO", "IN_PROGRESS", "DONE"];
@@ -37,6 +38,7 @@ type BoardTask = {
   dueDate: Date | null;
   assigneeId: string | null;
   assigneeName: string | null;
+  commentCount: number;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
@@ -67,6 +69,14 @@ export default async function BoardPage({
   
   const assigneeMap = new Map(assignees.map(u => [String(u._id), u.username]));
 
+  // Fetch comment counts for all tasks
+  const taskIds = taskDocs.map(t => new mongoose.Types.ObjectId(String(t._id)));
+  const commentCounts = await Comment.aggregate([
+    { $match: { taskId: { $in: taskIds } } },
+    { $group: { _id: "$taskId", count: { $sum: 1 } } },
+  ]);
+  const commentCountMap = new Map(commentCounts.map(c => [String(c._id), c.count]));
+
   const tasks: BoardTask[] = taskDocs.map((task) => ({
     id: String(task._id),
     title: task.title,
@@ -77,6 +87,7 @@ export default async function BoardPage({
     dueDate: task.dueDate ? new Date(task.dueDate) : null,
     assigneeId: task.assigneeId ? String(task.assigneeId) : null,
     assigneeName: task.assigneeId ? assigneeMap.get(String(task.assigneeId)) ?? null : null,
+    commentCount: commentCountMap.get(String(task._id)) ?? 0,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
     userId: String(task.userId),
@@ -416,13 +427,21 @@ export default async function BoardPage({
                             <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-200 pt-2">
                               <div className="space-y-0.5 text-[11px] text-zinc-500">
                                 <p>Updated {new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(task.updatedAt)}</p>
-                                <p className="inline-flex items-center gap-1">
-                                  <Flag className="h-3 w-3" />
-                                  {taskPriorityLabels[task.priority]}
-                                  {task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}
-                                  {task.assigneeName ? ` • ${task.assigneeName}` : ""}
-                                  {task.section && task.section !== "General" ? ` • ${task.section}` : ""}
-                                </p>
+                                <div className="inline-flex items-center gap-2">
+                                  <p className="inline-flex items-center gap-1">
+                                    <Flag className="h-3 w-3" />
+                                    {taskPriorityLabels[task.priority]}
+                                    {task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}
+                                    {task.assigneeName ? ` • ${task.assigneeName}` : ""}
+                                    {task.section && task.section !== "General" ? ` • ${task.section}` : ""}
+                                  </p>
+                                  {task.commentCount > 0 ? (
+                                    <span className="inline-flex items-center gap-1 text-zinc-600">
+                                      <MessageSquare className="h-3 w-3" />
+                                      {task.commentCount}
+                                    </span>
+                                  ) : null}
+                                </div>
                               </div>
                               <form action={`/api/tasks/${task.id}/delete`} method="post">
                                 <button
@@ -547,7 +566,15 @@ export default async function BoardPage({
                           </td>
                           <td className="px-3 py-3 text-xs text-zinc-500 whitespace-nowrap">
                             <p>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(task.updatedAt)}</p>
-                            <p className="mt-1">{taskPriorityLabels[task.priority]}{task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}{task.assigneeName ? ` • ${task.assigneeName}` : ""}{task.section && task.section !== "General" ? ` • ${task.section}` : ""}</p>
+                            <div className="mt-1 flex items-center gap-2">
+                              <p>{taskPriorityLabels[task.priority]}{task.dueDate ? ` • Due ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(task.dueDate)}` : ""}{task.assigneeName ? ` • ${task.assigneeName}` : ""}{task.section && task.section !== "General" ? ` • ${task.section}` : ""}</p>
+                              {task.commentCount > 0 ? (
+                                <span className="inline-flex items-center gap-1 text-zinc-600">
+                                  <MessageSquare className="h-3 w-3" />
+                                  {task.commentCount}
+                                </span>
+                              ) : null}
+                            </div>
                           </td>
                           <td className="px-3 py-3">
                             <form action={`/api/tasks/${task.id}/delete`} method="post">
