@@ -13,6 +13,7 @@ const secretKey = new TextEncoder().encode(
 export type Session = {
   userId: string;
   username: string;
+  isAdmin?: boolean;
 };
 
 type JwtPayload = Session & {
@@ -87,6 +88,16 @@ export async function requireSession() {
 
   if (!session) {
     redirect("/auth");
+  }
+
+  return session;
+}
+
+export async function requireAdmin() {
+  const session = await requireSession();
+
+  if (!session.isAdmin) {
+    redirect("/board");
   }
 
   return session;

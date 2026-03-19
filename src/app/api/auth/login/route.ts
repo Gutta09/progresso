@@ -50,6 +50,6 @@ export async function POST(request: Request) {
     );
   }
 
-  await createSession({ userId: String(user._id), username: user.username });
+  await createSession({ userId: String(user._id), username: user.username, isAdmin: user.isAdmin ?? false });
   redirect("/board");
 }

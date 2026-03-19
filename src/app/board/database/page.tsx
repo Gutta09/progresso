@@ -2,7 +2,7 @@ import Link from "next/link";
 import mongoose from "mongoose";
 import { ArrowLeft, CheckCircle2, ClipboardList, Database, LoaderCircle, UserCircle2 } from "lucide-react";
 import { redirect } from "next/navigation";
-import { requireSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
@@ -28,7 +28,7 @@ type StoredTask = {
 };
 
 export default async function DatabasePage() {
-  const session = await requireSession();
+  const session = await requireAdmin();
 
   await connectToDatabase();
 

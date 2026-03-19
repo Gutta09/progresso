@@ -143,13 +143,15 @@ export default async function BoardPage({
               <CalendarDays className="h-4 w-4" />
               Calendar
             </Link>
-            <Link
-              href="/board/database"
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900"
-            >
-              <Database className="h-4 w-4" />
-              Data explorer
-            </Link>
+            {session.isAdmin ? (
+              <Link
+                href="/board/database"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                <Database className="h-4 w-4" />
+                Data explorer
+              </Link>
+            ) : null}
           </nav>
 
           <form action="/api/auth/logout" method="post" className="mt-6">
