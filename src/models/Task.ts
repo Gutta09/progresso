@@ -49,6 +49,20 @@ const taskSchema = new Schema(
       default: [],
       index: true,
     },
+    attachments: {
+      type: [
+        {
+          id: String,
+          filename: String,
+          url: String,
+          size: Number,
+          uploadedAt: Date,
+          uploadedBy: Schema.Types.ObjectId,
+        },
+      ],
+      required: false,
+      default: [],
+    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
