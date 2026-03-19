@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity as ActivityIcon, CalendarDays, CheckCircle2, ClipboardList, Database, Flag, KanbanSquare, LayoutGrid, LayoutList, LoaderCircle, LogOut, Link as LinkIcon, MessageSquare, Paperclip, Plus, Search, Trash2 } from "lucide-react";
+import { Activity as ActivityIcon, CalendarDays, CheckCircle2, ClipboardList, Database, Flag, KanbanSquare, LayoutGrid, LayoutList, LoaderCircle, LogOut, Link as LinkIcon, MessageSquare, Paperclip, Plus, Search, Trash2, TrendingUp } from "lucide-react";
 import mongoose from "mongoose";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
@@ -154,6 +154,13 @@ export default async function BoardPage({
           </div>
 
           <nav className="mt-6 space-y-1">
+            <Link
+              href="/board/dashboard"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900"
+            >
+              <TrendingUp className="h-4 w-4" />
+              Dashboard
+            </Link>
             <Link
               href="/board"
               className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100"
