@@ -3,6 +3,7 @@ import { buildRedirectUrl } from "@/lib/http";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getFirstError, taskSchema } from "@/lib/validators";
 import { Task } from "@/models/Task";
+import { Activity } from "@/models/Activity";
 import mongoose from "mongoose";
 import { redirect } from "next/navigation";
 
@@ -31,11 +32,21 @@ export async function POST(request: Request) {
 
   await connectToDatabase();
 
-  await Task.create({
+  const userId = new mongoose.Types.ObjectId(session.userId);
+  
+  const task = await Task.create({
     ...parsed.data,
     assigneeId: parsed.data.assigneeId ? new mongoose.Types.ObjectId(parsed.data.assigneeId) : undefined,
     dueDate: parsed.data.dueDate ? new Date(`${parsed.data.dueDate}T00:00:00.000Z`) : undefined,
-    userId: new mongoose.Types.ObjectId(session.userId),
+    userId,
+  });
+
+  // Log task creation activity
+  await Activity.create({
+    taskId: task._id,
+    userId,
+    action: "created",
+    description: `Created task "${task.title}"`,
   });
 
   redirect("/board");

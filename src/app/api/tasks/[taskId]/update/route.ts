@@ -3,6 +3,7 @@ import { buildRedirectUrl } from "@/lib/http";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getFirstError, taskSchema } from "@/lib/validators";
 import { Task } from "@/models/Task";
+import { Activity } from "@/models/Activity";
 import mongoose from "mongoose";
 import { redirect } from "next/navigation";
 
@@ -47,6 +48,55 @@ export async function POST(
     redirect(buildRedirectUrl("/board", { error: "Invalid session." }));
   }
 
+  // Fetch original task to compare changes
+  const originalTask = await Task.findOne({
+    _id: taskId,
+    userId: userObjectId,
+  });
+
+  if (!originalTask) {
+    redirect(buildRedirectUrl("/board", { error: "Task not found." }));
+  }
+
+  // Track changes for activity logging
+  const changes = [];
+  
+  if (parsed.data.status !== originalTask.status) {
+    changes.push({
+      action: "status_changed",
+      fieldName: "status",
+      oldValue: originalTask.status,
+      newValue: parsed.data.status,
+    });
+  }
+  
+  if (parsed.data.priority !== originalTask.priority) {
+    changes.push({
+      action: "priority_changed",
+      fieldName: "priority",
+      oldValue: originalTask.priority,
+      newValue: parsed.data.priority,
+    });
+  }
+  
+  if (parsed.data.assigneeId !== (originalTask.assigneeId?.toString() ?? "")) {
+    changes.push({
+      action: "assigned",
+      fieldName: "assigneeId",
+      oldValue: originalTask.assigneeId?.toString() ?? "Unassigned",
+      newValue: parsed.data.assigneeId || "Unassigned",
+    });
+  }
+  
+  if (parsed.data.dueDate !== (originalTask.dueDate?.toISOString().split('T')[0] ?? "")) {
+    changes.push({
+      action: "due_date_changed",
+      fieldName: "dueDate",
+      oldValue: originalTask.dueDate?.toISOString().split('T')[0] ?? "No due date",
+      newValue: parsed.data.dueDate || "No due date",
+    });
+  }
+
   const updated = await Task.updateOne({
     _id: taskId,
     userId: userObjectId,
@@ -60,6 +110,15 @@ export async function POST(
 
   if (!updated.matchedCount) {
     redirect(buildRedirectUrl("/board", { error: "Task not found." }));
+  }
+
+  // Log activities for each change
+  for (const change of changes) {
+    await Activity.create({
+      taskId,
+      userId: userObjectId,
+      ...change,
+    });
   }
 
   redirect("/board");

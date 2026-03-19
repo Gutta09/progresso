@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, ClipboardList, Database, Flag, KanbanSquare, LayoutGrid, LayoutList, LoaderCircle, LogOut, Link as LinkIcon, MessageSquare, Paperclip, Plus, Search, Trash2 } from "lucide-react";
+import { Activity as ActivityIcon, CalendarDays, CheckCircle2, ClipboardList, Database, Flag, KanbanSquare, LayoutGrid, LayoutList, LoaderCircle, LogOut, Link as LinkIcon, MessageSquare, Paperclip, Plus, Search, Trash2 } from "lucide-react";
 import mongoose from "mongoose";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
@@ -7,6 +7,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
 import { Comment } from "@/models/Comment";
+import { Activity } from "@/models/Activity";
 import { taskPriorityLabels, taskStatusLabels, type TaskPriorityValue, type TaskStatusValue } from "@/lib/validators";
 
 const statusOrder: TaskStatusValue[] = ["TODO", "IN_PROGRESS", "DONE"];
@@ -41,6 +42,7 @@ type BoardTask = {
   commentCount: number;
   dependencyCount: number;
   attachmentCount: number;
+  activityCount: number;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
@@ -91,6 +93,13 @@ export default async function BoardPage({
     return acc;
   }, {} as Record<string, number>);
 
+  // Fetch activity counts for all tasks
+  const activityCounts = await Activity.aggregate([
+    { $match: { taskId: { $in: taskIds } } },
+    { $group: { _id: "$taskId", count: { $sum: 1 } } },
+  ]);
+  const activityCountMap = new Map(activityCounts.map(a => [String(a._id), a.count]));
+
   const tasks: BoardTask[] = taskDocs.map((task) => ({
     id: String(task._id),
     title: task.title,
@@ -104,6 +113,7 @@ export default async function BoardPage({
     commentCount: commentCountMap.get(String(task._id)) ?? 0,
     dependencyCount: dependencyCounts[String(task._id)] ?? 0,
     attachmentCount: attachmentCounts[String(task._id)] ?? 0,
+    activityCount: activityCountMap.get(String(task._id)) ?? 0,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
     userId: String(task.userId),
@@ -469,6 +479,12 @@ export default async function BoardPage({
                                       {task.attachmentCount}
                                     </span>
                                   ) : null}
+                                  {task.activityCount > 0 ? (
+                                    <span className="inline-flex items-center gap-1 text-zinc-600">
+                                      <ActivityIcon className="h-3 w-3" />
+                                      {task.activityCount}
+                                    </span>
+                                  ) : null}
                                 </div>
                               </div>
                               <form action={`/api/tasks/${task.id}/delete`} method="post">
@@ -612,6 +628,12 @@ export default async function BoardPage({
                                 <span className="inline-flex items-center gap-1 text-zinc-600">
                                   <Paperclip className="h-3 w-3" />
                                   {task.attachmentCount}
+                                </span>
+                              ) : null}
+                              {task.activityCount > 0 ? (
+                                <span className="inline-flex items-center gap-1 text-zinc-600">
+                                  <ActivityIcon className="h-3 w-3" />
+                                  {task.activityCount}
                                 </span>
                               ) : null}
                             </div>
