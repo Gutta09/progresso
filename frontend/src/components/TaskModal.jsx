@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { updateTask, addComment, deleteComment } from '../api'
+import { useState, useEffect } from 'react'
+import { updateTask, addComment, deleteComment, getTeamMembers } from '../api'
 import { useAuth } from '../context/AuthContext'
 
 const priorityOptions = ['low', 'medium', 'high']
@@ -10,10 +10,25 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
   const [description, setDescription] = useState(task.description || '')
   const [priority, setPriority] = useState(task.priority)
   const [dueDate, setDueDate] = useState(task.due_date || '')
+  const [assignedTo, setAssignedTo] = useState(task.assigned_to || '')
   const [comment, setComment] = useState('')
   const [saving, setSaving] = useState(false)
   const [commenting, setCommenting] = useState(false)
   const [error, setError] = useState('')
+  const [teamMembers, setTeamMembers] = useState([])
+
+  useEffect(() => {
+    fetchTeamMembers()
+  }, [])
+
+  const fetchTeamMembers = async () => {
+    try {
+      const res = await getTeamMembers()
+      setTeamMembers(res.data)
+    } catch (err) {
+      // not in a team, that's fine
+    }
+  }
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -27,11 +42,12 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
         description: description.trim() || null,
         priority,
         due_date: dueDate || null,
+        assigned_to: assignedTo || null,
       })
       onRefresh()
       onClose()
     } catch (err) {
-      setError('Failed to save changes')
+      setError(err.response?.data?.detail || 'Failed to save changes')
     } finally {
       setSaving(false)
     }
@@ -41,7 +57,10 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
     if (!comment.trim()) return
     setCommenting(true)
     try {
-      await addComment(task.task_id, { text_content: comment.trim(), task_id: task.task_id })
+      await addComment(task.task_id, {
+        text_content: comment.trim(),
+        task_id: task.task_id,
+      })
       setComment('')
       onRefresh()
     } catch (err) {
@@ -60,6 +79,8 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
     }
   }
 
+  const isAdmin = user?.role === 'admin'
+
   return (
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -76,6 +97,7 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
             style={styles.input}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            disabled={!isAdmin && task.assigned_to !== user?.user_id}
           />
         </div>
 
@@ -87,6 +109,7 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Add a description..."
             rows={3}
+            disabled={!isAdmin && task.assigned_to !== user?.user_id}
           />
         </div>
 
@@ -97,6 +120,7 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
               style={styles.select}
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
+              disabled={!isAdmin && task.assigned_to !== user?.user_id}
             >
               {priorityOptions.map((p) => (
                 <option key={p} value={p}>
@@ -113,13 +137,42 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
+              disabled={!isAdmin && task.assigned_to !== user?.user_id}
             />
           </div>
         </div>
 
-        <button style={styles.saveBtn} onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : 'Save changes'}
-        </button>
+        {teamMembers.length > 0 && (
+          <div style={styles.field}>
+            <label style={styles.label}>Assigned to</label>
+            {isAdmin ? (
+              <select
+                style={styles.select}
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+              >
+                <option value="">Unassigned</option>
+                {teamMembers.map((member) => (
+                  <option key={member.user_id} value={member.user_id}>
+                    {member.username} {member.user_id === user?.user_id ? '(you)' : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div style={styles.assigneeDisplay}>
+                {task.assigned_to
+                  ? teamMembers.find((m) => m.user_id === task.assigned_to)?.username || 'Unknown'
+                  : 'Unassigned'}
+              </div>
+            )}
+          </div>
+        )}
+
+        {(isAdmin || task.assigned_to === user?.user_id) && (
+          <button style={styles.saveBtn} onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : 'Save changes'}
+          </button>
+        )}
 
         <div style={styles.divider} />
 
@@ -135,8 +188,11 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
             {task.comments?.map((c) => (
               <div key={c.comment_id} style={styles.commentItem}>
                 <div style={styles.commentTop}>
+                  <div style={styles.commentAvatar}>
+                    {teamMembers.find((m) => m.user_id === c.user_id)?.username?.charAt(0).toUpperCase() || '?'}
+                  </div>
                   <span style={styles.commentUser}>
-                    User #{c.user_id}
+                    {teamMembers.find((m) => m.user_id === c.user_id)?.username || `User #${c.user_id}`}
                   </span>
                   <span style={styles.commentTime}>
                     {new Date(c.timestamp).toLocaleString()}
@@ -262,6 +318,14 @@ const styles = {
     backgroundColor: '#fff',
     width: '100%',
   },
+  assigneeDisplay: {
+    padding: '0.65rem 0.9rem',
+    borderRadius: '8px',
+    border: '1.5px solid #e5e7eb',
+    fontSize: '0.9rem',
+    color: '#374151',
+    backgroundColor: '#f9fafb',
+  },
   row: {
     display: 'flex',
     gap: '1rem',
@@ -276,6 +340,7 @@ const styles = {
     fontSize: '0.95rem',
     fontWeight: '600',
     marginBottom: '1.5rem',
+    cursor: 'pointer',
   },
   divider: {
     height: '1px',
@@ -312,6 +377,19 @@ const styles = {
     gap: '0.5rem',
     marginBottom: '0.4rem',
   },
+  commentAvatar: {
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    backgroundColor: '#5b4fcf',
+    color: '#ffffff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.7rem',
+    fontWeight: '700',
+    flexShrink: 0,
+  },
   commentUser: {
     fontSize: '0.8rem',
     fontWeight: '600',
@@ -347,6 +425,7 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '600',
     whiteSpace: 'nowrap',
+    cursor: 'pointer',
   },
 }
 

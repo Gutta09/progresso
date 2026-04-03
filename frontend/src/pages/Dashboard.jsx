@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getBoards, createBoard, deleteBoard, getMyTeam, getTeamMembers } from '../api'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
+import TeamManageModal from '../components/TeamManageModal'
 
 const Dashboard = () => {
   const { user, workspace } = useAuth()
@@ -16,6 +17,7 @@ const Dashboard = () => {
   const [showCode, setShowCode] = useState(false)
   const [members, setMembers] = useState([])
   const [showMembers, setShowMembers] = useState(false)
+  const [showManageTeam, setShowManageTeam] = useState(false)
 
   useEffect(() => {
     fetchBoards()
@@ -111,15 +113,23 @@ const Dashboard = () => {
                 👥 {members.length} members
               </button>
               {user?.role === 'admin' && (
-                <button
-                  style={styles.showCodeBtn}
-                  onClick={() => {
-                    setShowCode(!showCode)
-                    setShowMembers(false)
-                  }}
-                >
-                  {showCode ? 'Hide code' : 'Show invite code'}
-                </button>
+                <>
+                  <button
+                    style={styles.showCodeBtn}
+                    onClick={() => {
+                      setShowCode(!showCode)
+                      setShowMembers(false)
+                    }}
+                  >
+                    {showCode ? 'Hide code' : 'Show invite code'}
+                  </button>
+                  <button
+                    style={styles.manageBtn}
+                    onClick={() => setShowManageTeam(true)}
+                  >
+                    Manage team
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -166,18 +176,20 @@ const Dashboard = () => {
 
         {error && <div style={styles.error}>{error}</div>}
 
-        <form onSubmit={handleCreateBoard} style={styles.createForm}>
-          <input
-            style={styles.input}
-            type="text"
-            placeholder="New board name..."
-            value={newBoardName}
-            onChange={(e) => setNewBoardName(e.target.value)}
-          />
-          <button style={styles.createBtn} type="submit" disabled={creating}>
-            {creating ? 'Creating...' : '+ Create Board'}
-          </button>
-        </form>
+        {(workspace === 'individual' || user?.role === 'admin') && (
+          <form onSubmit={handleCreateBoard} style={styles.createForm}>
+            <input
+              style={styles.input}
+              type="text"
+              placeholder="New board name..."
+              value={newBoardName}
+              onChange={(e) => setNewBoardName(e.target.value)}
+            />
+            <button style={styles.createBtn} type="submit" disabled={creating}>
+              {creating ? 'Creating...' : '+ Create Board'}
+            </button>
+          </form>
+        )}
 
         {loading ? (
           <p style={styles.message}>Loading boards...</p>
@@ -193,12 +205,14 @@ const Dashboard = () => {
               >
                 <div style={styles.cardTop}>
                   <h3 style={styles.boardName}>{board.board_name}</h3>
-                  <button
-                    style={styles.deleteBtn}
-                    onClick={(e) => handleDeleteBoard(e, board.board_id)}
-                  >
-                    ✕
-                  </button>
+                  {(workspace === 'individual' || user?.role === 'admin') && (
+                    <button
+                      style={styles.deleteBtn}
+                      onClick={(e) => handleDeleteBoard(e, board.board_id)}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
                 <p style={styles.boardMeta}>
                   {board.columns?.length || 0} columns •{' '}
@@ -215,6 +229,18 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {showManageTeam && team && (
+        <TeamManageModal
+          team={team}
+          members={members}
+          onClose={() => setShowManageTeam(false)}
+          onRefresh={() => {
+            fetchTeam()
+            fetchMembers()
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -295,6 +321,7 @@ const styles = {
     fontSize: '0.9rem',
     padding: '0.2rem 0.4rem',
     borderRadius: '4px',
+    cursor: 'pointer',
   },
   boardMeta: {
     fontSize: '0.85rem',
@@ -348,6 +375,16 @@ const styles = {
     backgroundColor: 'transparent',
     color: '#5b4fcf',
     border: '1.5px solid #5b4fcf',
+    borderRadius: '8px',
+    fontSize: '0.85rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+  },
+  manageBtn: {
+    padding: '0.45rem 1rem',
+    backgroundColor: '#5b4fcf',
+    color: '#ffffff',
+    border: 'none',
     borderRadius: '8px',
     fontSize: '0.85rem',
     fontWeight: '500',

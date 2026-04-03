@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { getBoard, createTask, moveTask, deleteTask } from '../api'
+import { getBoard, createTask, moveTask, deleteTask, getTeamMembers } from '../api'
 import Navbar from '../components/Navbar'
 import TaskCard from '../components/TaskCard'
 import TaskModal from '../components/TaskModal'
@@ -14,10 +14,27 @@ const Board = () => {
   const [showModal, setShowModal] = useState(false)
   const [activeColumn, setActiveColumn] = useState(null)
   const [draggedTask, setDraggedTask] = useState(null)
+  const [teamMembers, setTeamMembers] = useState([])
+  const [toast, setToast] = useState('')
 
   useEffect(() => {
     fetchBoard()
+    fetchTeamMembers()
   }, [id])
+
+  const showToast = (message) => {
+    setToast(message)
+    setTimeout(() => setToast(''), 3000)
+  }
+
+  const fetchTeamMembers = async () => {
+    try {
+      const res = await getTeamMembers()
+      setTeamMembers(res.data)
+    } catch (err) {
+      // not in a team
+    }
+  }
 
   const fetchBoard = async () => {
     try {
@@ -44,7 +61,7 @@ const Board = () => {
       await moveTask(draggedTask.task_id, { column_id: columnId })
       await fetchBoard()
     } catch (err) {
-      setError('Failed to move task')
+      showToast(err.response?.data?.detail || 'Failed to move task')
     } finally {
       setDraggedTask(null)
     }
@@ -56,7 +73,7 @@ const Board = () => {
       await createTask({ title: title.trim(), column_id: columnId })
       await fetchBoard()
     } catch (err) {
-      setError('Failed to create task')
+      showToast('Failed to create task')
     }
   }
 
@@ -65,7 +82,7 @@ const Board = () => {
       await deleteTask(taskId)
       await fetchBoard()
     } catch (err) {
-      setError('Failed to delete task')
+      showToast('Failed to delete task')
     }
   }
 
@@ -87,6 +104,13 @@ const Board = () => {
   return (
     <div>
       <Navbar />
+
+      {toast && (
+        <div style={styles.toast}>
+          {toast}
+        </div>
+      )}
+
       <div style={styles.container}>
         <h2 style={styles.boardTitle}>{board.board_name}</h2>
 
@@ -105,6 +129,7 @@ const Board = () => {
                 onOpenTask={openTask}
                 activeColumn={activeColumn}
                 setActiveColumn={setActiveColumn}
+                teamMembers={teamMembers}
               />
             ))}
         </div>
@@ -131,6 +156,7 @@ const Column = ({
   onOpenTask,
   activeColumn,
   setActiveColumn,
+  teamMembers,
 }) => {
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [adding, setAdding] = useState(false)
@@ -160,7 +186,8 @@ const Column = ({
             task={task}
             onDragStart={onDragStart}
             onDelete={onDeleteTask}
-            onClick={openTask => onOpenTask(task)}
+            onClick={() => onOpenTask(task)}
+            teamMembers={teamMembers}
           />
         ))}
       </div>
@@ -260,6 +287,7 @@ const styles = {
     color: '#9ca3af',
     fontSize: '0.9rem',
     fontWeight: '500',
+    cursor: 'pointer',
   },
   addForm: {
     marginTop: '0.75rem',
@@ -287,6 +315,7 @@ const styles = {
     borderRadius: '8px',
     fontSize: '0.85rem',
     fontWeight: '600',
+    cursor: 'pointer',
   },
   addCancelBtn: {
     flex: 1,
@@ -296,11 +325,26 @@ const styles = {
     border: '1.5px solid #e5e7eb',
     borderRadius: '8px',
     fontSize: '0.85rem',
+    cursor: 'pointer',
   },
   message: {
     padding: '2rem',
     textAlign: 'center',
     color: '#6b7280',
+  },
+  toast: {
+    position: 'fixed',
+    bottom: '2rem',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: '#1a1a2e',
+    color: '#ffffff',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '8px',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    zIndex: 999,
+    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
   },
 }
 

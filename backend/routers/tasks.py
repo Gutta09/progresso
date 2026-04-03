@@ -96,11 +96,23 @@ def move_task(
     if not column:
         raise HTTPException(status_code=404, detail="Target column not found")
 
+    board = db.query(models.Board).filter(
+        models.Board.board_id == column.board_id
+    ).first()
+
+    if board and board.team_id:
+        is_admin = current_user.role == models.RoleEnum.admin
+        is_assigned = task.assigned_to == current_user.user_id
+        if not is_admin and not is_assigned:
+            raise HTTPException(
+                status_code=403,
+                detail="Only the assigned member or admin can move this task"
+            )
+
     task.column_id = move.column_id
     db.commit()
     db.refresh(task)
     return task
-
 # ─── Delete Task ────────────────────────────────────
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(

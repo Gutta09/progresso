@@ -8,13 +8,25 @@ from datetime import date
 
 router = APIRouter()
 
-# ─── Create Board ───────────────────────────────────
+def require_admin(current_user: models.User):
+    if current_user.role != models.RoleEnum.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only team admins can perform this action"
+        )
+
 @router.post("/", response_model=schemas.BoardResponse, status_code=status.HTTP_201_CREATED)
 def create_board(
     board: schemas.BoardCreate,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
+    if board.team_id and current_user.role != models.RoleEnum.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only team admins can create team boards"
+        )
+
     new_board = models.Board(
         board_name=board.board_name,
         team_id=board.team_id,
@@ -36,7 +48,7 @@ def create_board(
     db.commit()
     db.refresh(new_board)
     return new_board
-# ─── Get All Boards for Team ────────────────────────
+
 @router.get("/", response_model=list[schemas.BoardResponse])
 def get_boards(
     workspace: str = "team",
@@ -59,7 +71,6 @@ def get_boards(
         ).all()
     return boards
 
-# ─── Get Single Board ───────────────────────────────
 @router.get("/{board_id}", response_model=schemas.BoardResponse)
 def get_board(
     board_id: int,
@@ -69,11 +80,10 @@ def get_board(
     board = db.query(models.Board).filter(models.Board.board_id == board_id).first()
     if not board:
         raise HTTPException(status_code=404, detail="Board not found")
-    if board.team_id != current_user.team_id:
+    if board.team_id and board.team_id != current_user.team_id:
         raise HTTPException(status_code=403, detail="Not authorized to view this board")
     return board
 
-# ─── Delete Board ───────────────────────────────────
 @router.delete("/{board_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_board(
     board_id: int,
@@ -83,12 +93,13 @@ def delete_board(
     board = db.query(models.Board).filter(models.Board.board_id == board_id).first()
     if not board:
         raise HTTPException(status_code=404, detail="Board not found")
-    if board.team_id != current_user.team_id:
+    if board.team_id:
+        require_admin(current_user)
+    elif board.owner_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this board")
     db.delete(board)
     db.commit()
 
-# ─── Create Column ──────────────────────────────────
 @router.post("/columns/new", response_model=schemas.BoardColumnResponse, status_code=status.HTTP_201_CREATED)
 def create_column(
     column: schemas.BoardColumnCreate,
@@ -98,6 +109,8 @@ def create_column(
     board = db.query(models.Board).filter(models.Board.board_id == column.board_id).first()
     if not board:
         raise HTTPException(status_code=404, detail="Board not found")
+    if board.team_id:
+        require_admin(current_user)
     new_column = models.BoardColumn(
         col_name=column.col_name,
         position_index=column.position_index,
@@ -108,15 +121,21 @@ def create_column(
     db.refresh(new_column)
     return new_column
 
-# ─── Delete Column ──────────────────────────────────
 @router.delete("/columns/{column_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_column(
     column_id: int,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    column = db.query(models.BoardColumn).filter(models.BoardColumn.column_id == column_id).first()
+    column = db.query(models.BoardColumn).filter(
+        models.BoardColumn.column_id == column_id
+    ).first()
     if not column:
         raise HTTPException(status_code=404, detail="Column not found")
+    board = db.query(models.Board).filter(
+        models.Board.board_id == column.board_id
+    ).first()
+    if board and board.team_id:
+        require_admin(current_user)
     db.delete(column)
     db.commit()
