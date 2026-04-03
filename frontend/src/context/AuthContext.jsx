@@ -6,6 +6,9 @@ const AuthContext = createContext()
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [workspace, setWorkspace] = useState(
+    localStorage.getItem('workspace') || 'team'
+  )
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -29,11 +32,18 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('workspace')
     setUser(null)
+    setWorkspace('team')
+  }
+
+  const switchWorkspace = (type) => {
+    setWorkspace(type)
+    localStorage.setItem('workspace', type)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, workspace, switchWorkspace }}>
       {children}
     </AuthContext.Provider>
   )

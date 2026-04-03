@@ -18,6 +18,7 @@ def create_board(
     new_board = models.Board(
         board_name=board.board_name,
         team_id=board.team_id,
+        owner_id=current_user.user_id,
         created_date=date.today()
     )
     db.add(new_board)
@@ -35,18 +36,27 @@ def create_board(
     db.commit()
     db.refresh(new_board)
     return new_board
-
 # ─── Get All Boards for Team ────────────────────────
 @router.get("/", response_model=list[schemas.BoardResponse])
 def get_boards(
+    workspace: str = "team",
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    if not current_user.team_id:
-        raise HTTPException(status_code=404, detail="You are not part of a team")
-    boards = db.query(models.Board).filter(
-        models.Board.team_id == current_user.team_id
-    ).all()
+    if workspace == "individual":
+        boards = db.query(models.Board).filter(
+            models.Board.team_id == None,
+            models.Board.owner_id == current_user.user_id
+        ).all()
+    elif workspace == "team" and current_user.team_id:
+        boards = db.query(models.Board).filter(
+            models.Board.team_id == current_user.team_id
+        ).all()
+    else:
+        boards = db.query(models.Board).filter(
+            models.Board.team_id == None,
+            models.Board.owner_id == current_user.user_id
+        ).all()
     return boards
 
 # ─── Get Single Board ───────────────────────────────

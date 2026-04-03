@@ -16,10 +16,9 @@ api.interceptors.request.use((config) => {
 export const registerUser = (data) => api.post('/users/register', data)
 export const loginUser = (data) => api.post('/users/login', data)
 export const getMe = () => api.get('/users/me')
-export const getTeamMembers = () => api.get('/users/team')
 
 // ─── Boards ─────────────────────────────────────────
-export const getBoards = () => api.get('/boards/')
+export const getBoards = (workspace = 'team') => api.get(`/boards/?workspace=${workspace}`)
 export const createBoard = (data) => api.post('/boards/', data)
 export const getBoard = (id) => api.get(`/boards/${id}`)
 export const deleteBoard = (id) => api.delete(`/boards/${id}`)
@@ -37,3 +36,9 @@ export const deleteTask = (id) => api.delete(`/tasks/${id}`)
 // ─── Comments ───────────────────────────────────────
 export const addComment = (taskId, data) => api.post(`/tasks/${taskId}/comments`, data)
 export const deleteComment = (commentId) => api.delete(`/tasks/comments/${commentId}`)
+
+// ─── Teams ──────────────────────────────────────────
+export const createTeam = (data) => api.post('/teams/create', data)
+export const joinTeam = (data) => api.post('/teams/join', data)
+export const getMyTeam = () => api.get('/teams/me')
+export const getTeamMembers = () => api.get('/teams/members')

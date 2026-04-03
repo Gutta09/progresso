@@ -1,25 +1,49 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getBoards, createBoard, deleteBoard } from '../api'
+import { getBoards, createBoard, deleteBoard, getMyTeam, getTeamMembers } from '../api'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 
 const Dashboard = () => {
-  const { user } = useAuth()
+  const { user, workspace } = useAuth()
   const navigate = useNavigate()
   const [boards, setBoards] = useState([])
   const [loading, setLoading] = useState(true)
   const [newBoardName, setNewBoardName] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
+  const [team, setTeam] = useState(null)
+  const [showCode, setShowCode] = useState(false)
+  const [members, setMembers] = useState([])
+  const [showMembers, setShowMembers] = useState(false)
 
   useEffect(() => {
     fetchBoards()
-  }, [])
+    fetchTeam()
+    fetchMembers()
+  }, [workspace])
+
+  const fetchTeam = async () => {
+    try {
+      const res = await getMyTeam()
+      setTeam(res.data)
+    } catch (err) {
+      // user has no team, that's fine
+    }
+  }
+
+  const fetchMembers = async () => {
+    try {
+      const res = await getTeamMembers()
+      setMembers(res.data)
+    } catch (err) {
+      // no team
+    }
+  }
 
   const fetchBoards = async () => {
     try {
-      const res = await getBoards()
+      const res = await getBoards(workspace)
       setBoards(res.data)
     } catch (err) {
       setError('Failed to load boards')
@@ -31,18 +55,15 @@ const Dashboard = () => {
   const handleCreateBoard = async (e) => {
     e.preventDefault()
     if (!newBoardName.trim()) return
-    if (!user?.team_id) {
-      setError('You need to be part of a team to create a board')
-      return
-    }
     setCreating(true)
     try {
       const res = await createBoard({
         board_name: newBoardName.trim(),
-        team_id: user.team_id,
+        team_id: workspace === 'team' ? (user.team_id || null) : null,
       })
       setBoards([...boards, res.data])
       setNewBoardName('')
+      setError('')
     } catch (err) {
       setError('Failed to create board')
     } finally {
@@ -66,8 +87,82 @@ const Dashboard = () => {
       <Navbar />
       <div style={styles.container}>
         <div style={styles.header}>
-          <h2 style={styles.heading}>My Boards</h2>
+          <h2 style={styles.heading}>
+            {workspace === 'team' ? '👥 Team Boards' : '🧑‍💻 My Boards'}
+          </h2>
         </div>
+
+        {team && (
+          <div style={styles.teamBanner}>
+            <div style={styles.teamBannerLeft}>
+              <span style={styles.teamBannerName}>👥 {team.team_name}</span>
+              {user?.role === 'admin' && (
+                <span style={styles.adminBadge}>Admin</span>
+              )}
+            </div>
+            <div style={styles.teamBannerRight}>
+              <button
+                style={styles.showCodeBtn}
+                onClick={() => {
+                  setShowMembers(!showMembers)
+                  setShowCode(false)
+                }}
+              >
+                👥 {members.length} members
+              </button>
+              {user?.role === 'admin' && (
+                <button
+                  style={styles.showCodeBtn}
+                  onClick={() => {
+                    setShowCode(!showCode)
+                    setShowMembers(false)
+                  }}
+                >
+                  {showCode ? 'Hide code' : 'Show invite code'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {showCode && team && (
+          <div style={styles.inviteCodeBanner}>
+            <p style={styles.inviteCodeLabel}>
+              Share this code with teammates to join your team
+            </p>
+            <div style={styles.inviteCodeBox}>
+              <span style={styles.inviteCodeText}>{team.invite_code}</span>
+              <button
+                style={styles.copyBtn}
+                onClick={() => {
+                  navigator.clipboard.writeText(team.invite_code)
+                  alert('Copied to clipboard!')
+                }}
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showMembers && members.length > 0 && (
+          <div style={styles.membersPanel}>
+            <p style={styles.membersPanelTitle}>Team members</p>
+            <div style={styles.membersList}>
+              {members.map((member) => (
+                <div key={member.user_id} style={styles.memberItem}>
+                  <div style={styles.memberAvatar}>
+                    {member.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p style={styles.memberName}>{member.username}</p>
+                    <p style={styles.memberRole}>{member.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && <div style={styles.error}>{error}</div>}
 
@@ -213,6 +308,131 @@ const styles = {
   message: {
     color: '#6b7280',
     fontSize: '0.95rem',
+  },
+  teamBanner: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    border: '1.5px solid #e5e7eb',
+    borderRadius: '10px',
+    padding: '0.85rem 1.25rem',
+    marginBottom: '1rem',
+  },
+  teamBannerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  teamBannerName: {
+    fontSize: '0.95rem',
+    fontWeight: '600',
+    color: '#374151',
+  },
+  adminBadge: {
+    backgroundColor: '#f5f3ff',
+    color: '#5b4fcf',
+    border: '1px solid #5b4fcf',
+    borderRadius: '999px',
+    padding: '0.15rem 0.6rem',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+  },
+  teamBannerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  showCodeBtn: {
+    padding: '0.45rem 1rem',
+    backgroundColor: 'transparent',
+    color: '#5b4fcf',
+    border: '1.5px solid #5b4fcf',
+    borderRadius: '8px',
+    fontSize: '0.85rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+  },
+  inviteCodeBanner: {
+    backgroundColor: '#f5f3ff',
+    border: '2px dashed #5b4fcf',
+    borderRadius: '10px',
+    padding: '1.25rem',
+    marginBottom: '1rem',
+    textAlign: 'center',
+  },
+  inviteCodeLabel: {
+    fontSize: '0.85rem',
+    color: '#6b7280',
+    marginBottom: '0.75rem',
+  },
+  inviteCodeBox: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '1rem',
+  },
+  inviteCodeText: {
+    fontSize: '1.8rem',
+    fontWeight: '700',
+    color: '#5b4fcf',
+    letterSpacing: '0.3em',
+  },
+  copyBtn: {
+    padding: '0.45rem 1rem',
+    backgroundColor: '#5b4fcf',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  membersPanel: {
+    backgroundColor: '#ffffff',
+    border: '1.5px solid #e5e7eb',
+    borderRadius: '10px',
+    padding: '1.25rem',
+    marginBottom: '1rem',
+  },
+  membersPanelTitle: {
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: '0.75rem',
+  },
+  membersList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.6rem',
+  },
+  memberItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  memberAvatar: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    backgroundColor: '#5b4fcf',
+    color: '#ffffff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: '700',
+    fontSize: '0.9rem',
+    flexShrink: 0,
+  },
+  memberName: {
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    color: '#374151',
+  },
+  memberRole: {
+    fontSize: '0.78rem',
+    color: '#9ca3af',
+    textTransform: 'capitalize',
   },
 }
 

@@ -17,6 +17,7 @@ class Team(Base):
 
     team_id = Column(Integer, primary_key=True, index=True)
     team_name = Column(String, nullable=False)
+    invite_code = Column(String, unique=True, nullable=False)
 
     members = relationship("User", back_populates="team")
     boards = relationship("Board", back_populates="team")
@@ -43,7 +44,8 @@ class Board(Base):
     board_id = Column(Integer, primary_key=True, index=True)
     board_name = Column(String, nullable=False)
     created_date = Column(Date, nullable=True)
-    team_id = Column(Integer, ForeignKey("teams.team_id"), nullable=False)
+    team_id = Column(Integer, ForeignKey("teams.team_id"), nullable=True)
+    owner_id = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 
     team = relationship("Team", back_populates="boards")
     columns = relationship("BoardColumn", back_populates="board", cascade="all, delete")

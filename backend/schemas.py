@@ -19,9 +19,13 @@ class TeamCreate(BaseModel):
 class TeamResponse(BaseModel):
     team_id: int
     team_name: str
+    invite_code: str
 
     class Config:
         from_attributes = True
+
+class JoinTeamRequest(BaseModel):
+    invite_code: str        
 
 # ─── User ───────────────────────────────────────────
 class UserCreate(BaseModel):
@@ -129,13 +133,14 @@ class BoardColumnResponse(BaseModel):
 # ─── Board ──────────────────────────────────────────
 class BoardCreate(BaseModel):
     board_name: str
-    team_id: int
+    team_id: Optional[int] = None
 
 class BoardResponse(BaseModel):
     board_id: int
     board_name: str
     created_date: Optional[date] = None
-    team_id: int
+    team_id: Optional[int] = None
+    owner_id: Optional[int] = None
     columns: List[BoardColumnResponse] = []
 
     class Config:
