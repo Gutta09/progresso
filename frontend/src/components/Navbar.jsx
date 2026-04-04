@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { createTeam } from '../api'
+import { createTeam, getUnreadCount } from '../api'
+import NotificationPanel from './NotificationPanel'
 
 const Navbar = () => {
   const { user, logout, workspace, switchWorkspace } = useAuth()
@@ -11,6 +12,33 @@ const Navbar = () => {
   const [newTeamName, setNewTeamName] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // Poll for unread count every 30 seconds
+  useEffect(() => {
+    if (!user?.team_id) return
+    fetchUnreadCount()
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [user])
+
+  const fetchUnreadCount = async () => {
+    try {
+      const lastSeen = localStorage.getItem('notifications_last_seen')
+      const data = await getUnreadCount(lastSeen)
+      setUnreadCount(data.count)
+    } catch (err) {
+      // not in a team or error
+    }
+  }
+
+  const handleBellClick = () => {
+    // Mark as read by saving current timestamp
+    localStorage.setItem('notifications_last_seen', new Date().toISOString())
+    setUnreadCount(0)
+    setShowNotifications(!showNotifications)
+  }
 
   const handleLogout = () => {
     logout()
@@ -114,12 +142,27 @@ const Navbar = () => {
           </div>
 
           {/* ── My Tasks button ── */}
-          <button
-            style={styles.myTasksBtn}
-            onClick={() => navigate('/my-tasks')}
-          >
+          <button style={styles.myTasksBtn} onClick={() => navigate('/my-tasks')}>
             ✅ My Tasks
           </button>
+
+          {/* ── Notification Bell ── */}
+          {user?.team_id && (
+            <div style={styles.bellWrapper}>
+              <button style={styles.bellBtn} onClick={handleBellClick}>
+                🔔
+                {unreadCount > 0 && (
+                  <span style={styles.badge}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <NotificationPanel onClose={() => setShowNotifications(false)} />
+              )}
+            </div>
+          )}
 
           {/* ── Profile link ── */}
           <span
@@ -193,10 +236,7 @@ const styles = {
     top: 0,
     zIndex: 100,
   },
-  left: {
-    display: 'flex',
-    alignItems: 'center',
-  },
+  left: { display: 'flex', alignItems: 'center' },
   logo: {
     fontSize: '1.4rem',
     fontWeight: '700',
@@ -208,9 +248,7 @@ const styles = {
     alignItems: 'center',
     gap: '1.25rem',
   },
-  workspaceSwitcher: {
-    position: 'relative',
-  },
+  workspaceSwitcher: { position: 'relative' },
   workspaceBtn: {
     display: 'flex',
     alignItems: 'center',
@@ -224,9 +262,7 @@ const styles = {
     fontWeight: '500',
     cursor: 'pointer',
   },
-  chevron: {
-    fontSize: '0.75rem',
-  },
+  chevron: { fontSize: '0.75rem' },
   dropdown: {
     position: 'absolute',
     top: 'calc(100% + 8px)',
@@ -257,9 +293,7 @@ const styles = {
     cursor: 'pointer',
     fontSize: '1.2rem',
   },
-  dropdownItemActive: {
-    backgroundColor: '#f5f3ff',
-  },
+  dropdownItemActive: { backgroundColor: '#f5f3ff' },
   dropdownItemTitle: {
     fontSize: '0.88rem',
     fontWeight: '600',
@@ -274,11 +308,7 @@ const styles = {
     backgroundColor: '#f3f4f6',
     margin: '0.5rem 0',
   },
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    zIndex: 99,
-  },
+  overlay: { position: 'fixed', inset: 0, zIndex: 99 },
   myTasksBtn: {
     padding: '0.45rem 1rem',
     backgroundColor: 'transparent',
@@ -288,6 +318,33 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '500',
     cursor: 'pointer',
+  },
+  bellWrapper: {
+    position: 'relative',
+  },
+  bellBtn: {
+    position: 'relative',
+    background: 'none',
+    border: 'none',
+    fontSize: '1.2rem',
+    cursor: 'pointer',
+    padding: '0.25rem',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: '-4px',
+    right: '-6px',
+    backgroundColor: '#ef4444',
+    color: '#fff',
+    fontSize: '0.65rem',
+    fontWeight: '700',
+    borderRadius: '999px',
+    padding: '0.1rem 0.35rem',
+    minWidth: '16px',
+    textAlign: 'center',
+    lineHeight: '1.4',
   },
   username: {
     fontSize: '0.95rem',
@@ -347,10 +404,7 @@ const styles = {
     outline: 'none',
     marginBottom: '1.25rem',
   },
-  modalActions: {
-    display: 'flex',
-    gap: '0.75rem',
-  },
+  modalActions: { display: 'flex', gap: '0.75rem' },
   cancelBtn: {
     flex: 1,
     padding: '0.75rem',

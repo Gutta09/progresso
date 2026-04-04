@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { getBoard, createTask, moveTask, deleteTask, getTeamMembers } from '../api'
+import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import TaskCard from '../components/TaskCard'
 import TaskModal from '../components/TaskModal'
@@ -8,6 +9,7 @@ import ActivityPanel from '../components/ActivityPanel'
 
 const Board = () => {
   const { id } = useParams()
+  const { user } = useAuth()
   const [board, setBoard] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -49,13 +51,8 @@ const Board = () => {
     }
   }
 
-  const handleDragStart = (task) => {
-    setDraggedTask(task)
-  }
-
-  const handleDragOver = (e) => {
-    e.preventDefault()
-  }
+  const handleDragStart = (task) => setDraggedTask(task)
+  const handleDragOver = (e) => e.preventDefault()
 
   const handleDrop = async (columnId) => {
     if (!draggedTask || draggedTask.column_id === columnId) return
@@ -103,24 +100,21 @@ const Board = () => {
   if (error) return <div style={styles.message}>{error}</div>
   if (!board) return <div style={styles.message}>Board not found</div>
 
+  const isTeamBoard = !!board.team_id
+  const isAdmin = user?.role === 'admin'
+  // On team boards only admin can create/delete, on individual boards anyone can
+  const canManageTasks = !isTeamBoard || isAdmin
+
   return (
     <div>
       <Navbar />
 
-      {toast && (
-        <div style={styles.toast}>
-          {toast}
-        </div>
-      )}
+      {toast && <div style={styles.toast}>{toast}</div>}
 
       <div style={styles.container}>
-        {/* ── Board header ── */}
         <div style={styles.boardHeader}>
           <h2 style={styles.boardTitle}>{board.board_name}</h2>
-          <button
-            style={styles.activityBtn}
-            onClick={() => setShowActivity(true)}
-          >
+          <button style={styles.activityBtn} onClick={() => setShowActivity(true)}>
             📋 Activity
           </button>
         </div>
@@ -141,6 +135,7 @@ const Board = () => {
                 activeColumn={activeColumn}
                 setActiveColumn={setActiveColumn}
                 teamMembers={teamMembers}
+                canManageTasks={canManageTasks}
               />
             ))}
         </div>
@@ -151,15 +146,12 @@ const Board = () => {
           task={selectedTask}
           onClose={closeModal}
           onRefresh={fetchBoard}
-          isTeamBoard={!!board?.team_id}
+          isTeamBoard={isTeamBoard}
         />
       )}
 
       {showActivity && (
-        <ActivityPanel
-          boardId={id}
-          onClose={() => setShowActivity(false)}
-        />
+        <ActivityPanel boardId={id} onClose={() => setShowActivity(false)} />
       )}
     </div>
   )
@@ -176,6 +168,7 @@ const Column = ({
   activeColumn,
   setActiveColumn,
   teamMembers,
+  canManageTasks,
 }) => {
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [adding, setAdding] = useState(false)
@@ -204,43 +197,41 @@ const Column = ({
             key={task.task_id}
             task={task}
             onDragStart={onDragStart}
-            onDelete={onDeleteTask}
+            onDelete={canManageTasks ? onDeleteTask : null}
             onClick={() => onOpenTask(task)}
             teamMembers={teamMembers}
           />
         ))}
       </div>
 
-      {adding ? (
-        <div style={styles.addForm}>
-          <input
-            style={styles.addInput}
-            type="text"
-            placeholder="Task title..."
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            autoFocus
-          />
-          <div style={styles.addActions}>
-            <button style={styles.addConfirmBtn} onClick={handleAdd}>
-              Add
-            </button>
-            <button
-              style={styles.addCancelBtn}
-              onClick={() => {
-                setAdding(false)
-                setNewTaskTitle('')
-              }}
-            >
-              Cancel
-            </button>
+      {/* Only show add task button if user can manage tasks */}
+      {canManageTasks && (
+        adding ? (
+          <div style={styles.addForm}>
+            <input
+              style={styles.addInput}
+              type="text"
+              placeholder="Task title..."
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+              autoFocus
+            />
+            <div style={styles.addActions}>
+              <button style={styles.addConfirmBtn} onClick={handleAdd}>Add</button>
+              <button
+                style={styles.addCancelBtn}
+                onClick={() => { setAdding(false); setNewTaskTitle('') }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <button style={styles.addTaskBtn} onClick={() => setAdding(true)}>
-          + Add task
-        </button>
+        ) : (
+          <button style={styles.addTaskBtn} onClick={() => setAdding(true)}>
+            + Add task
+          </button>
+        )
       )}
     </div>
   )

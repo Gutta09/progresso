@@ -53,3 +53,9 @@ export const getBoardActivity = (boardId) =>
 
 export const getMyTasks = () =>
   api.get('/tasks/my-tasks').then(r => r.data)
+
+export const getUnreadCount = (since) =>
+  api.get(`/activity/unread-count${since ? `?since=${since}` : ''}`).then(r => r.data)
+
+export const getRecentActivity = () =>
+  api.get('/activity/recent').then(r => r.data)

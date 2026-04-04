@@ -7,29 +7,43 @@ const priorityColors = {
 const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) => {
   const priority = priorityColors[task.priority] || priorityColors.medium
   const assignee = teamMembers.find((m) => m.user_id === task.assigned_to)
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date()
+
+  const today = new Date().toDateString()
+  const dueDate = task.due_date ? new Date(task.due_date) : null
+  const isOverdue = dueDate && dueDate < new Date(today)
+  const isDueToday = dueDate && dueDate.toDateString() === today
 
   return (
     <div
       style={{
         ...styles.card,
         ...(isOverdue ? styles.cardOverdue : {}),
+        ...(isDueToday ? styles.cardDueToday : {}),
       }}
       draggable
       onDragStart={() => onDragStart(task)}
       onClick={() => onClick(task)}
     >
+      {/* Due today banner */}
+      {isDueToday && (
+        <div style={styles.dueTodayBanner}>
+          🔔 Due Today
+        </div>
+      )}
+
       <div style={styles.top}>
         <p style={styles.title}>{task.title}</p>
-        <button
-          style={styles.deleteBtn}
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete(task.task_id)
-          }}
-        >
-          ✕
-        </button>
+        {onDelete && (
+          <button
+            style={styles.deleteBtn}
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(task.task_id)
+            }}
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {task.description && (
@@ -51,8 +65,8 @@ const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) =>
         {task.due_date && (
           <span style={{
             ...styles.dueDate,
-            color: isOverdue ? '#dc2626' : '#9ca3af',
-            fontWeight: isOverdue ? '600' : '400',
+            color: isOverdue ? '#dc2626' : isDueToday ? '#d97706' : '#9ca3af',
+            fontWeight: isOverdue || isDueToday ? '600' : '400',
           }}>
             {isOverdue ? '⚠ ' : ''}Due {task.due_date}
           </span>
@@ -84,10 +98,26 @@ const styles = {
     border: '1.5px solid #f3f4f6',
     cursor: 'grab',
     transition: 'box-shadow 0.15s',
+    overflow: 'hidden',
   },
   cardOverdue: {
     border: '1.5px solid #fca5a5',
     backgroundColor: '#fff9f9',
+  },
+  cardDueToday: {
+    border: '1.5px solid #fcd34d',
+    backgroundColor: '#fffdf0',
+  },
+  dueTodayBanner: {
+    backgroundColor: '#fef3c7',
+    color: '#d97706',
+    fontSize: '0.72rem',
+    fontWeight: '700',
+    padding: '0.25rem 0.6rem',
+    borderRadius: '6px',
+    marginBottom: '0.6rem',
+    display: 'inline-block',
+    letterSpacing: '0.02em',
   },
   top: {
     display: 'flex',

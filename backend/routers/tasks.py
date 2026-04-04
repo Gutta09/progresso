@@ -25,6 +25,17 @@ def create_task(
     if not column:
         raise HTTPException(status_code=404, detail="Column not found")
 
+    # ── Permission check: only admin can create tasks on team boards ──
+    board = db.query(models.Board).filter(
+        models.Board.board_id == column.board_id
+    ).first()
+    if board and board.team_id:
+        if current_user.role != models.RoleEnum.admin:
+            raise HTTPException(
+                status_code=403,
+                detail="Only team admins can create tasks on team boards"
+            )
+
     new_task = models.Task(
         title=task.title.strip(),
         description=task.description,
@@ -172,6 +183,17 @@ def delete_task(
     col = db.query(models.BoardColumn).filter(
         models.BoardColumn.column_id == task.column_id
     ).first()
+
+    # ── Permission check: only admin can delete tasks on team boards ──
+    board = db.query(models.Board).filter(
+        models.Board.board_id == col.board_id
+    ).first() if col else None
+    if board and board.team_id:
+        if current_user.role != models.RoleEnum.admin:
+            raise HTTPException(
+                status_code=403,
+                detail="Only team admins can delete tasks on team boards"
+            )
 
     title = task.title
     board_id = col.board_id if col else None
