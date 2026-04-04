@@ -31,7 +31,6 @@ const Login = () => {
       localStorage.setItem('token', accessToken)
       const userRes = await getMe()
       const userData = userRes.data
-
       if (userData.team_id) {
         login(accessToken, userData)
         navigate('/dashboard')
@@ -62,7 +61,6 @@ const Login = () => {
         setStep(3)
         return
       }
-
       if (teamChoice === 'join' && inviteCode.trim()) {
         await axios.post(
           'http://localhost:8000/teams/join',
@@ -70,7 +68,6 @@ const Login = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         )
       }
-
       const userRes = await getMe()
       login(token, userRes.data)
       navigate('/dashboard')
@@ -95,10 +92,10 @@ const Login = () => {
           </div>
           <p style={styles.inviteHint}>
             Team members can enter this code during signup to join{' '}
-            <strong>{createdTeam.team_name}</strong>
+            <strong style={{ color: '#a78bfa' }}>{createdTeam.team_name}</strong>
           </p>
           <button style={styles.button} onClick={() => navigate('/dashboard')}>
-            Go to dashboard
+            Go to dashboard →
           </button>
         </div>
       </div>
@@ -107,13 +104,23 @@ const Login = () => {
 
   return (
     <div style={styles.container}>
+      {/* Background glow effects */}
+      <div style={styles.glowTop} />
+      <div style={styles.glowBottom} />
+
       <div style={styles.card}>
-        <h1 style={styles.logo}>Progresso</h1>
+        {/* Logo */}
+        <div style={styles.logoWrapper}>
+          <div style={styles.logoIcon}>P</div>
+          <h1 style={styles.logo}>Progresso</h1>
+        </div>
 
         {step === 1 && (
           <>
-            <p style={styles.subtitle}>Sign in to your account</p>
+            <p style={styles.subtitle}>Welcome back — sign in to continue</p>
+
             {error && <div style={styles.error}>{error}</div>}
+
             <form onSubmit={handleLogin} style={styles.form}>
               <div style={styles.field}>
                 <label style={styles.label}>Email</label>
@@ -127,6 +134,7 @@ const Login = () => {
                   required
                 />
               </div>
+
               <div style={styles.field}>
                 <label style={styles.label}>Password</label>
                 <input
@@ -139,58 +147,49 @@ const Login = () => {
                   required
                 />
               </div>
+
               <button style={styles.button} type="submit" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? (
+                  <span style={styles.btnContent}>
+                    <span style={styles.spinner} /> Signing in...
+                  </span>
+                ) : (
+                  'Sign in →'
+                )}
               </button>
             </form>
+
             <p style={styles.footer}>
               Don't have an account?{' '}
-              <Link to="/signup" style={styles.link}>Sign up</Link>
+              <Link to="/signup" style={styles.link}>Create one</Link>
             </p>
           </>
         )}
 
         {step === 2 && (
           <>
-            <p style={styles.subtitle}>Set up your workspace</p>
+            <p style={styles.subtitle}>How do you want to work?</p>
             {error && <div style={styles.error}>{error}</div>}
 
             <div style={styles.choiceGrid}>
-              <div
-                style={{
-                  ...styles.choiceCard,
-                  ...(teamChoice === 'create' ? styles.choiceCardActive : {}),
-                }}
-                onClick={() => setTeamChoice('create')}
-              >
-                <span style={styles.choiceIcon}>👑</span>
-                <span style={styles.choiceTitle}>Create a team</span>
-                <span style={styles.choiceDesc}>Start a new workspace</span>
-              </div>
-
-              <div
-                style={{
-                  ...styles.choiceCard,
-                  ...(teamChoice === 'join' ? styles.choiceCardActive : {}),
-                }}
-                onClick={() => setTeamChoice('join')}
-              >
-                <span style={styles.choiceIcon}>🤝</span>
-                <span style={styles.choiceTitle}>Join a team</span>
-                <span style={styles.choiceDesc}>Enter an invite code</span>
-              </div>
-
-              <div
-                style={{
-                  ...styles.choiceCard,
-                  ...(teamChoice === 'solo' ? styles.choiceCardActive : {}),
-                }}
-                onClick={() => setTeamChoice('solo')}
-              >
-                <span style={styles.choiceIcon}>🧑‍💻</span>
-                <span style={styles.choiceTitle}>Just me</span>
-                <span style={styles.choiceDesc}>Individual projects</span>
-              </div>
+              {[
+                { key: 'create', icon: '👑', title: 'Create a team', desc: 'Start a new workspace' },
+                { key: 'join', icon: '🤝', title: 'Join a team', desc: 'Enter an invite code' },
+                { key: 'solo', icon: '🧑‍💻', title: 'Just me', desc: 'Individual projects' },
+              ].map((c) => (
+                <div
+                  key={c.key}
+                  style={{
+                    ...styles.choiceCard,
+                    ...(teamChoice === c.key ? styles.choiceCardActive : {}),
+                  }}
+                  onClick={() => setTeamChoice(c.key)}
+                >
+                  <span style={styles.choiceIcon}>{c.icon}</span>
+                  <span style={styles.choiceTitle}>{c.title}</span>
+                  <span style={styles.choiceDesc}>{c.desc}</span>
+                </div>
+              ))}
             </div>
 
             {teamChoice === 'create' && (
@@ -213,10 +212,13 @@ const Login = () => {
                   style={{
                     ...styles.input,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.2em',
+                    letterSpacing: '0.25em',
+                    textAlign: 'center',
+                    fontSize: '1.1rem',
+                    fontWeight: '700',
                   }}
                   type="text"
-                  placeholder="e.g. AX9K2M"
+                  placeholder="AX9K2M"
                   maxLength={6}
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
@@ -229,18 +231,19 @@ const Login = () => {
                 style={styles.backBtn}
                 onClick={() => { setStep(1); setError(null) }}
               >
-                Back
+                ← Back
               </button>
               <button
                 style={{
                   ...styles.button,
                   flex: 1,
-                  opacity: !teamChoice ? 0.5 : 1,
+                  marginTop: 0,
+                  opacity: !teamChoice ? 0.4 : 1,
                 }}
                 onClick={handleTeamStep}
                 disabled={loading || !teamChoice}
               >
-                {loading ? 'Please wait...' : 'Continue'}
+                {loading ? 'Please wait...' : 'Continue →'}
               </button>
             </div>
           </>
@@ -256,37 +259,85 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f0f2f5',
+    backgroundColor: '#0f0f1a',
     padding: '1rem',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  glowTop: {
+    position: 'absolute',
+    top: '-200px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '600px',
+    height: '600px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(124,110,240,0.15) 0%, transparent 70%)',
+    pointerEvents: 'none',
+  },
+  glowBottom: {
+    position: 'absolute',
+    bottom: '-200px',
+    right: '-100px',
+    width: '400px',
+    height: '400px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(124,110,240,0.08) 0%, transparent 70%)',
+    pointerEvents: 'none',
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1a1a2e',
     padding: '2.5rem',
-    borderRadius: '12px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+    borderRadius: '16px',
+    border: '1px solid #2a2a45',
+    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
     width: '100%',
     maxWidth: '440px',
+    position: 'relative',
+    zIndex: 1,
+  },
+  logoWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.75rem',
+    marginBottom: '0.75rem',
+  },
+  logoIcon: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: '1.1rem',
+    boxShadow: '0 4px 16px rgba(124,110,240,0.4)',
   },
   logo: {
-    fontSize: '2rem',
-    fontWeight: '700',
-    color: '#5b4fcf',
-    textAlign: 'center',
-    marginBottom: '0.5rem',
+    fontSize: '1.8rem',
+    fontWeight: '800',
+    background: 'linear-gradient(135deg, #a78bfa, #7c6ef0)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    margin: 0,
   },
   subtitle: {
     textAlign: 'center',
-    color: '#6b7280',
+    color: '#8b8bab',
     marginBottom: '2rem',
-    fontSize: '0.95rem',
+    fontSize: '0.9rem',
   },
   error: {
-    backgroundColor: '#fee2e2',
-    color: '#dc2626',
+    backgroundColor: 'rgba(248,113,113,0.1)',
+    border: '1px solid rgba(248,113,113,0.3)',
+    color: '#f87171',
     padding: '0.75rem 1rem',
     borderRadius: '8px',
     marginBottom: '1rem',
-    fontSize: '0.9rem',
+    fontSize: '0.875rem',
   },
   form: {
     display: 'flex',
@@ -296,43 +347,66 @@ const styles = {
   field: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.4rem',
-    marginBottom: '1rem',
+    gap: '0.5rem',
+    marginBottom: '0.5rem',
   },
   label: {
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     fontWeight: '500',
-    color: '#374151',
+    color: '#8b8bab',
+    letterSpacing: '0.02em',
   },
   input: {
-    padding: '0.75rem 1rem',
-    borderRadius: '8px',
-    border: '1.5px solid #e5e7eb',
+    padding: '0.8rem 1rem',
+    borderRadius: '10px',
+    border: '1.5px solid #2a2a45',
     fontSize: '0.95rem',
     outline: 'none',
     width: '100%',
+    backgroundColor: '#12122a',
+    color: '#f0f0ff',
+    transition: 'border-color 0.2s',
+    boxSizing: 'border-box',
   },
   button: {
     width: '100%',
-    padding: '0.85rem',
-    backgroundColor: '#5b4fcf',
+    padding: '0.9rem',
+    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
     color: '#ffffff',
     border: 'none',
-    borderRadius: '8px',
-    fontSize: '1rem',
+    borderRadius: '10px',
+    fontSize: '0.95rem',
     fontWeight: '600',
     marginTop: '0.5rem',
     cursor: 'pointer',
+    boxShadow: '0 4px 20px rgba(124,110,240,0.35)',
+    letterSpacing: '0.02em',
+  },
+  btnContent: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+  },
+  spinner: {
+    width: '14px',
+    height: '14px',
+    border: '2px solid rgba(255,255,255,0.3)',
+    borderTop: '2px solid #fff',
+    borderRadius: '50%',
+    display: 'inline-block',
+    animation: 'spin 0.8s linear infinite',
   },
   footer: {
     textAlign: 'center',
     marginTop: '1.5rem',
-    fontSize: '0.9rem',
-    color: '#6b7280',
+    fontSize: '0.875rem',
+    color: '#8b8bab',
   },
   link: {
-    color: '#5b4fcf',
-    fontWeight: '500',
+    color: '#a78bfa',
+    fontWeight: '600',
+    textDecoration: 'none',
   },
   choiceGrid: {
     display: 'grid',
@@ -344,28 +418,31 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '0.3rem',
+    gap: '0.35rem',
     padding: '1rem 0.5rem',
-    borderRadius: '10px',
-    border: '1.5px solid #e5e7eb',
+    borderRadius: '12px',
+    border: '1.5px solid #2a2a45',
     cursor: 'pointer',
+    backgroundColor: '#12122a',
+    transition: 'all 0.2s',
   },
   choiceCardActive: {
-    border: '1.5px solid #5b4fcf',
-    backgroundColor: '#f5f3ff',
+    border: '1.5px solid #7c6ef0',
+    backgroundColor: 'rgba(124,110,240,0.12)',
+    boxShadow: '0 0 20px rgba(124,110,240,0.15)',
   },
   choiceIcon: {
-    fontSize: '1.5rem',
+    fontSize: '1.4rem',
   },
   choiceTitle: {
-    fontSize: '0.8rem',
+    fontSize: '0.78rem',
     fontWeight: '600',
-    color: '#374151',
+    color: '#f0f0ff',
     textAlign: 'center',
   },
   choiceDesc: {
-    fontSize: '0.72rem',
-    color: '#9ca3af',
+    fontSize: '0.7rem',
+    color: '#8b8bab',
     textAlign: 'center',
   },
   stepButtons: {
@@ -374,12 +451,12 @@ const styles = {
     marginTop: '0.5rem',
   },
   backBtn: {
-    padding: '0.85rem 1.25rem',
+    padding: '0.9rem 1.25rem',
     backgroundColor: 'transparent',
-    color: '#6b7280',
-    border: '1.5px solid #e5e7eb',
-    borderRadius: '8px',
-    fontSize: '0.95rem',
+    color: '#8b8bab',
+    border: '1.5px solid #2a2a45',
+    borderRadius: '10px',
+    fontSize: '0.9rem',
     fontWeight: '500',
     cursor: 'pointer',
   },
@@ -391,19 +468,19 @@ const styles = {
   successTitle: {
     fontSize: '1.4rem',
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#f0f0ff',
     textAlign: 'center',
     marginBottom: '0.5rem',
   },
   successSubtitle: {
     textAlign: 'center',
-    color: '#6b7280',
-    fontSize: '0.95rem',
+    color: '#8b8bab',
+    fontSize: '0.9rem',
     marginBottom: '1.5rem',
   },
   inviteBox: {
-    backgroundColor: '#f5f3ff',
-    border: '2px dashed #5b4fcf',
+    background: 'rgba(124,110,240,0.1)',
+    border: '2px dashed #7c6ef0',
     borderRadius: '12px',
     padding: '1.5rem',
     textAlign: 'center',
@@ -411,14 +488,14 @@ const styles = {
   },
   inviteCode: {
     fontSize: '2rem',
-    fontWeight: '700',
-    color: '#5b4fcf',
+    fontWeight: '800',
+    color: '#a78bfa',
     letterSpacing: '0.3em',
   },
   inviteHint: {
     textAlign: 'center',
     fontSize: '0.85rem',
-    color: '#6b7280',
+    color: '#8b8bab',
     marginBottom: '1.5rem',
   },
 }
