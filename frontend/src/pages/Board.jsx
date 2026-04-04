@@ -7,6 +7,8 @@ import TaskCard from '../components/TaskCard'
 import TaskModal from '../components/TaskModal'
 import ActivityPanel from '../components/ActivityPanel'
 
+const columnAccents = ['#7c6ef0', '#34d399', '#fbbf24', '#f87171', '#60a5fa', '#a78bfa']
+
 const Board = () => {
   const { id } = useParams()
   const { user } = useAuth()
@@ -17,6 +19,7 @@ const Board = () => {
   const [showModal, setShowModal] = useState(false)
   const [activeColumn, setActiveColumn] = useState(null)
   const [draggedTask, setDraggedTask] = useState(null)
+  const [dragOverColumn, setDragOverColumn] = useState(null)
   const [teamMembers, setTeamMembers] = useState([])
   const [toast, setToast] = useState('')
   const [showActivity, setShowActivity] = useState(false)
@@ -35,9 +38,7 @@ const Board = () => {
     try {
       const res = await getTeamMembers()
       setTeamMembers(res.data)
-    } catch (err) {
-      // not in a team
-    }
+    } catch (err) {}
   }
 
   const fetchBoard = async () => {
@@ -52,9 +53,13 @@ const Board = () => {
   }
 
   const handleDragStart = (task) => setDraggedTask(task)
-  const handleDragOver = (e) => e.preventDefault()
+  const handleDragOver = (e, columnId) => {
+    e.preventDefault()
+    setDragOverColumn(columnId)
+  }
 
   const handleDrop = async (columnId) => {
+    setDragOverColumn(null)
     if (!draggedTask || draggedTask.column_id === columnId) return
     try {
       await moveTask(draggedTask.task_id, { column_id: columnId })
@@ -96,44 +101,79 @@ const Board = () => {
     fetchBoard()
   }
 
-  if (loading) return <div style={styles.message}>Loading board...</div>
-  if (error) return <div style={styles.message}>{error}</div>
-  if (!board) return <div style={styles.message}>Board not found</div>
+  if (loading) return (
+    <div style={styles.page}>
+      <Navbar />
+      <div style={styles.message}>Loading board...</div>
+    </div>
+  )
+  if (error) return (
+    <div style={styles.page}>
+      <Navbar />
+      <div style={styles.message}>{error}</div>
+    </div>
+  )
+  if (!board) return (
+    <div style={styles.page}>
+      <Navbar />
+      <div style={styles.message}>Board not found</div>
+    </div>
+  )
 
   const isTeamBoard = !!board.team_id
   const isAdmin = user?.role === 'admin'
-  // On team boards only admin can create/delete, on individual boards anyone can
   const canManageTasks = !isTeamBoard || isAdmin
+  const totalTasks = board.columns?.reduce((a, c) => a + (c.tasks?.length || 0), 0) || 0
 
   return (
-    <div>
+    <div style={styles.page}>
       <Navbar />
 
       {toast && <div style={styles.toast}>{toast}</div>}
 
       <div style={styles.container}>
+        {/* ── Board header ── */}
         <div style={styles.boardHeader}>
-          <h2 style={styles.boardTitle}>{board.board_name}</h2>
-          <button style={styles.activityBtn} onClick={() => setShowActivity(true)}>
+          <div style={styles.boardHeaderLeft}>
+            <h2 style={styles.boardTitle}>{board.board_name}</h2>
+            <div style={styles.boardMeta}>
+              <span style={styles.metaChip}>
+                📋 {board.columns?.length || 0} columns
+              </span>
+              <span style={styles.metaChip}>
+                ✅ {totalTasks} tasks
+              </span>
+              {isTeamBoard && (
+                <span style={styles.metaChip}>
+                  👥 Team board
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            style={styles.activityBtn}
+            onClick={() => setShowActivity(true)}
+          >
             📋 Activity
           </button>
         </div>
 
+        {/* ── Columns ── */}
         <div style={styles.columnsWrapper}>
           {board.columns
             .sort((a, b) => a.position_index - b.position_index)
-            .map((column) => (
+            .map((column, index) => (
               <Column
                 key={column.column_id}
                 column={column}
+                accent={columnAccents[index % columnAccents.length]}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 onCreateTask={handleCreateTask}
                 onDeleteTask={handleDeleteTask}
                 onOpenTask={openTask}
-                activeColumn={activeColumn}
-                setActiveColumn={setActiveColumn}
+                isDragOver={dragOverColumn === column.column_id}
                 teamMembers={teamMembers}
                 canManageTasks={canManageTasks}
               />
@@ -159,14 +199,14 @@ const Board = () => {
 
 const Column = ({
   column,
+  accent,
   onDragStart,
   onDragOver,
   onDrop,
   onCreateTask,
   onDeleteTask,
   onOpenTask,
-  activeColumn,
-  setActiveColumn,
+  isDragOver,
   teamMembers,
   canManageTasks,
 }) => {
@@ -182,13 +222,29 @@ const Column = ({
 
   return (
     <div
-      style={styles.column}
-      onDragOver={onDragOver}
+      style={{
+        ...styles.column,
+        borderColor: isDragOver ? accent : '#2a2a45',
+        boxShadow: isDragOver ? `0 0 0 2px ${accent}40` : 'none',
+      }}
+      onDragOver={(e) => onDragOver(e, column.column_id)}
       onDrop={() => onDrop(column.column_id)}
+      onDragLeave={() => {}}
     >
+      {/* Column accent top bar */}
+      <div style={{ ...styles.columnAccentBar, backgroundColor: accent }} />
+
       <div style={styles.columnHeader}>
-        <span style={styles.columnName}>{column.col_name}</span>
-        <span style={styles.taskCount}>{column.tasks?.length || 0}</span>
+        <div style={styles.columnHeaderLeft}>
+          <span style={styles.columnName}>{column.col_name}</span>
+        </div>
+        <span style={{
+          ...styles.taskCount,
+          backgroundColor: `${accent}20`,
+          color: accent,
+        }}>
+          {column.tasks?.length || 0}
+        </span>
       </div>
 
       <div style={styles.taskList}>
@@ -204,12 +260,14 @@ const Column = ({
         ))}
       </div>
 
-      {/* Only show add task button if user can manage tasks */}
       {canManageTasks && (
         adding ? (
           <div style={styles.addForm}>
             <input
-              style={styles.addInput}
+              style={{
+                ...styles.addInput,
+                borderColor: accent,
+              }}
               type="text"
               placeholder="Task title..."
               value={newTaskTitle}
@@ -218,7 +276,15 @@ const Column = ({
               autoFocus
             />
             <div style={styles.addActions}>
-              <button style={styles.addConfirmBtn} onClick={handleAdd}>Add</button>
+              <button
+                style={{
+                  ...styles.addConfirmBtn,
+                  background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                }}
+                onClick={handleAdd}
+              >
+                Add
+              </button>
               <button
                 style={styles.addCancelBtn}
                 onClick={() => { setAdding(false); setNewTaskTitle('') }}
@@ -228,7 +294,10 @@ const Column = ({
             </div>
           </div>
         ) : (
-          <button style={styles.addTaskBtn} onClick={() => setAdding(true)}>
+          <button
+            style={styles.addTaskBtn}
+            onClick={() => setAdding(true)}
+          >
             + Add task
           </button>
         )
@@ -238,85 +307,121 @@ const Column = ({
 }
 
 const styles = {
+  page: {
+    minHeight: '100vh',
+    backgroundColor: '#0f0f1a',
+  },
   container: {
     padding: '2rem',
     overflowX: 'auto',
   },
   boardHeader: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: '1.5rem',
+    marginBottom: '2rem',
+    gap: '1rem',
+  },
+  boardHeaderLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.6rem',
   },
   boardTitle: {
-    fontSize: '1.6rem',
-    fontWeight: '700',
-    color: '#1a1a2e',
+    fontSize: '1.75rem',
+    fontWeight: '800',
+    color: '#f0f0ff',
     margin: 0,
   },
+  boardMeta: {
+    display: 'flex',
+    gap: '0.5rem',
+    flexWrap: 'wrap',
+  },
+  metaChip: {
+    fontSize: '0.75rem',
+    color: '#8b8bab',
+    backgroundColor: '#1a1a2e',
+    border: '1px solid #2a2a45',
+    borderRadius: '999px',
+    padding: '0.2rem 0.65rem',
+  },
   activityBtn: {
-    padding: '0.45rem 1rem',
-    backgroundColor: '#f5f3ff',
-    color: '#5b4fcf',
-    border: '1.5px solid #5b4fcf',
+    padding: '0.5rem 1.1rem',
+    backgroundColor: 'rgba(124,110,240,0.12)',
+    color: '#a78bfa',
+    border: '1px solid rgba(124,110,240,0.3)',
     borderRadius: '8px',
-    fontSize: '0.88rem',
+    fontSize: '0.85rem',
     fontWeight: '500',
     cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
   },
   columnsWrapper: {
     display: 'flex',
     gap: '1.25rem',
     alignItems: 'flex-start',
     minWidth: 'max-content',
+    paddingBottom: '1rem',
   },
   column: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: '12px',
-    padding: '1rem',
-    width: '280px',
+    backgroundColor: '#1a1a2e',
+    borderRadius: '14px',
+    width: '290px',
     minHeight: '200px',
-    border: '1.5px solid #e5e7eb',
+    border: '1px solid #2a2a45',
+    overflow: 'hidden',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  },
+  columnAccentBar: {
+    height: '3px',
+    width: '100%',
   },
   columnHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '1rem',
+    padding: '0.9rem 1rem 0.5rem',
+  },
+  columnHeaderLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
   },
   columnName: {
-    fontWeight: '600',
-    fontSize: '0.95rem',
-    color: '#374151',
+    fontWeight: '700',
+    fontSize: '0.9rem',
+    color: '#f0f0ff',
   },
   taskCount: {
-    backgroundColor: '#e5e7eb',
-    color: '#6b7280',
     borderRadius: '999px',
     padding: '0.1rem 0.55rem',
-    fontSize: '0.8rem',
-    fontWeight: '600',
+    fontSize: '0.75rem',
+    fontWeight: '700',
   },
   taskList: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.75rem',
+    gap: '0.6rem',
     minHeight: '60px',
+    padding: '0.5rem 0.75rem',
   },
   addTaskBtn: {
-    width: '100%',
+    width: 'calc(100% - 1.5rem)',
+    margin: '0.5rem 0.75rem 0.75rem',
     padding: '0.6rem',
-    marginTop: '0.75rem',
     backgroundColor: 'transparent',
-    border: '1.5px dashed #d1d5db',
+    border: '1.5px dashed #2a2a45',
     borderRadius: '8px',
-    color: '#9ca3af',
-    fontSize: '0.9rem',
+    color: '#4a4a6a',
+    fontSize: '0.85rem',
     fontWeight: '500',
     cursor: 'pointer',
+    transition: 'border-color 0.2s, color 0.2s',
   },
   addForm: {
-    marginTop: '0.75rem',
+    padding: '0.5rem 0.75rem 0.75rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
@@ -324,9 +429,13 @@ const styles = {
   addInput: {
     padding: '0.6rem 0.75rem',
     borderRadius: '8px',
-    border: '1.5px solid #5b4fcf',
-    fontSize: '0.9rem',
+    border: '1.5px solid',
+    fontSize: '0.88rem',
     outline: 'none',
+    backgroundColor: '#12122a',
+    color: '#f0f0ff',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   addActions: {
     display: 'flex',
@@ -335,7 +444,6 @@ const styles = {
   addConfirmBtn: {
     flex: 1,
     padding: '0.5rem',
-    backgroundColor: '#5b4fcf',
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
@@ -347,8 +455,8 @@ const styles = {
     flex: 1,
     padding: '0.5rem',
     backgroundColor: 'transparent',
-    color: '#6b7280',
-    border: '1.5px solid #e5e7eb',
+    color: '#8b8bab',
+    border: '1px solid #2a2a45',
     borderRadius: '8px',
     fontSize: '0.85rem',
     cursor: 'pointer',
@@ -356,7 +464,7 @@ const styles = {
   message: {
     padding: '2rem',
     textAlign: 'center',
-    color: '#6b7280',
+    color: '#8b8bab',
   },
   toast: {
     position: 'fixed',
@@ -364,13 +472,14 @@ const styles = {
     left: '50%',
     transform: 'translateX(-50%)',
     backgroundColor: '#1a1a2e',
-    color: '#ffffff',
+    color: '#f0f0ff',
     padding: '0.75rem 1.5rem',
-    borderRadius: '8px',
+    borderRadius: '10px',
     fontSize: '0.9rem',
     fontWeight: '500',
     zIndex: 999,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+    border: '1px solid #2a2a45',
   },
 }
 

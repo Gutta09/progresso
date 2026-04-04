@@ -1,7 +1,7 @@
 const priorityColors = {
-  low: { bg: '#ecfdf5', text: '#059669', border: '#6ee7b7' },
-  medium: { bg: '#fffbeb', text: '#d97706', border: '#fcd34d' },
-  high: { bg: '#fef2f2', text: '#dc2626', border: '#fca5a5' },
+  low: { bg: 'rgba(52,211,153,0.12)', text: '#34d399', border: 'rgba(52,211,153,0.25)' },
+  medium: { bg: 'rgba(251,191,36,0.12)', text: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
+  high: { bg: 'rgba(248,113,113,0.12)', text: '#f87171', border: 'rgba(248,113,113,0.25)' },
 }
 
 const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) => {
@@ -51,21 +51,19 @@ const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) =>
       )}
 
       <div style={styles.bottom}>
-        <span
-          style={{
-            ...styles.priority,
-            backgroundColor: priority.bg,
-            color: priority.text,
-            border: `1px solid ${priority.border}`,
-          }}
-        >
+        <span style={{
+          ...styles.priority,
+          backgroundColor: priority.bg,
+          color: priority.text,
+          border: `1px solid ${priority.border}`,
+        }}>
           {task.priority}
         </span>
 
         {task.due_date && (
           <span style={{
             ...styles.dueDate,
-            color: isOverdue ? '#dc2626' : isDueToday ? '#d97706' : '#9ca3af',
+            color: isOverdue ? '#f87171' : isDueToday ? '#fbbf24' : '#4a4a6a',
             fontWeight: isOverdue || isDueToday ? '600' : '400',
           }}>
             {isOverdue ? '⚠ ' : ''}Due {task.due_date}
@@ -91,84 +89,87 @@ const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) =>
 
 const styles = {
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#12122a',
     borderRadius: '10px',
-    padding: '0.9rem 1rem',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-    border: '1.5px solid #f3f4f6',
+    padding: '0.85rem 0.9rem',
+    border: '1px solid #2a2a45',
     cursor: 'grab',
-    transition: 'box-shadow 0.15s',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
     overflow: 'hidden',
   },
   cardOverdue: {
-    border: '1.5px solid #fca5a5',
-    backgroundColor: '#fff9f9',
+    border: '1px solid rgba(248,113,113,0.4)',
+    backgroundColor: 'rgba(248,113,113,0.05)',
   },
   cardDueToday: {
-    border: '1.5px solid #fcd34d',
-    backgroundColor: '#fffdf0',
+    border: '1px solid rgba(251,191,36,0.4)',
+    backgroundColor: 'rgba(251,191,36,0.05)',
   },
   dueTodayBanner: {
-    backgroundColor: '#fef3c7',
-    color: '#d97706',
-    fontSize: '0.72rem',
+    backgroundColor: 'rgba(251,191,36,0.12)',
+    color: '#fbbf24',
+    border: '1px solid rgba(251,191,36,0.25)',
+    fontSize: '0.7rem',
     fontWeight: '700',
-    padding: '0.25rem 0.6rem',
+    padding: '0.2rem 0.55rem',
     borderRadius: '6px',
     marginBottom: '0.6rem',
     display: 'inline-block',
-    letterSpacing: '0.02em',
+    letterSpacing: '0.03em',
   },
   top: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: '0.4rem',
+    marginBottom: '0.35rem',
     gap: '0.5rem',
   },
   title: {
-    fontSize: '0.9rem',
+    fontSize: '0.875rem',
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#f0f0ff',
     lineHeight: '1.4',
     flex: 1,
+    margin: 0,
   },
   deleteBtn: {
     background: 'none',
     border: 'none',
-    color: '#d1d5db',
-    fontSize: '0.8rem',
+    color: '#4a4a6a',
+    fontSize: '0.75rem',
     padding: '0.1rem 0.3rem',
     borderRadius: '4px',
     flexShrink: 0,
     cursor: 'pointer',
   },
   description: {
-    fontSize: '0.8rem',
-    color: '#6b7280',
+    fontSize: '0.78rem',
+    color: '#8b8bab',
     marginBottom: '0.6rem',
     lineHeight: '1.4',
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
     overflow: 'hidden',
+    margin: '0 0 0.6rem',
   },
   bottom: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
     flexWrap: 'wrap',
-    marginTop: '0.5rem',
+    marginTop: '0.6rem',
   },
   priority: {
-    fontSize: '0.72rem',
-    fontWeight: '600',
-    padding: '0.15rem 0.5rem',
+    fontSize: '0.7rem',
+    fontWeight: '700',
+    padding: '0.15rem 0.55rem',
     borderRadius: '999px',
     textTransform: 'capitalize',
+    letterSpacing: '0.03em',
   },
   dueDate: {
-    fontSize: '0.75rem',
+    fontSize: '0.72rem',
   },
   rightBadges: {
     display: 'flex',
@@ -177,21 +178,22 @@ const styles = {
     marginLeft: 'auto',
   },
   comments: {
-    fontSize: '0.75rem',
-    color: '#9ca3af',
+    fontSize: '0.72rem',
+    color: '#4a4a6a',
   },
   avatar: {
     width: '22px',
     height: '22px',
     borderRadius: '50%',
-    backgroundColor: '#5b4fcf',
+    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
     color: '#ffffff',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '0.65rem',
+    fontSize: '0.62rem',
     fontWeight: '700',
     flexShrink: 0,
+    boxShadow: '0 2px 6px rgba(124,110,240,0.3)',
   },
 }
 
