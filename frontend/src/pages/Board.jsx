@@ -4,6 +4,7 @@ import { getBoard, createTask, moveTask, deleteTask, getTeamMembers } from '../a
 import Navbar from '../components/Navbar'
 import TaskCard from '../components/TaskCard'
 import TaskModal from '../components/TaskModal'
+import ActivityPanel from '../components/ActivityPanel'
 
 const Board = () => {
   const { id } = useParams()
@@ -16,6 +17,7 @@ const Board = () => {
   const [draggedTask, setDraggedTask] = useState(null)
   const [teamMembers, setTeamMembers] = useState([])
   const [toast, setToast] = useState('')
+  const [showActivity, setShowActivity] = useState(false)
 
   useEffect(() => {
     fetchBoard()
@@ -112,7 +114,16 @@ const Board = () => {
       )}
 
       <div style={styles.container}>
-        <h2 style={styles.boardTitle}>{board.board_name}</h2>
+        {/* ── Board header ── */}
+        <div style={styles.boardHeader}>
+          <h2 style={styles.boardTitle}>{board.board_name}</h2>
+          <button
+            style={styles.activityBtn}
+            onClick={() => setShowActivity(true)}
+          >
+            📋 Activity
+          </button>
+        </div>
 
         <div style={styles.columnsWrapper}>
           {board.columns
@@ -140,6 +151,14 @@ const Board = () => {
           task={selectedTask}
           onClose={closeModal}
           onRefresh={fetchBoard}
+          isTeamBoard={!!board?.team_id}
+        />
+      )}
+
+      {showActivity && (
+        <ActivityPanel
+          boardId={id}
+          onClose={() => setShowActivity(false)}
         />
       )}
     </div>
@@ -232,11 +251,27 @@ const styles = {
     padding: '2rem',
     overflowX: 'auto',
   },
+  boardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '1.5rem',
+  },
   boardTitle: {
     fontSize: '1.6rem',
     fontWeight: '700',
     color: '#1a1a2e',
-    marginBottom: '1.5rem',
+    margin: 0,
+  },
+  activityBtn: {
+    padding: '0.45rem 1rem',
+    backgroundColor: '#f5f3ff',
+    color: '#5b4fcf',
+    border: '1.5px solid #5b4fcf',
+    borderRadius: '8px',
+    fontSize: '0.88rem',
+    fontWeight: '500',
+    cursor: 'pointer',
   },
   columnsWrapper: {
     display: 'flex',

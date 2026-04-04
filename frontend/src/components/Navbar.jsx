@@ -113,7 +113,23 @@ const Navbar = () => {
             )}
           </div>
 
-          <span style={styles.username}>👋 {user?.username}</span>
+          {/* ── My Tasks button ── */}
+          <button
+            style={styles.myTasksBtn}
+            onClick={() => navigate('/my-tasks')}
+          >
+            ✅ My Tasks
+          </button>
+
+          {/* ── Profile link ── */}
+          <span
+            style={styles.username}
+            onClick={() => navigate('/profile')}
+            title="Edit profile"
+          >
+            👋 {user?.username}
+          </span>
+
           <button style={styles.logoutBtn} onClick={handleLogout}>
             Logout
           </button>
@@ -263,10 +279,23 @@ const styles = {
     inset: 0,
     zIndex: 99,
   },
+  myTasksBtn: {
+    padding: '0.45rem 1rem',
+    backgroundColor: 'transparent',
+    color: '#5b4fcf',
+    border: '1.5px solid #5b4fcf',
+    borderRadius: '8px',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+  },
   username: {
     fontSize: '0.95rem',
-    color: '#374151',
+    color: '#5b4fcf',
     fontWeight: '500',
+    cursor: 'pointer',
+    textDecoration: 'underline dotted',
+    textUnderlineOffset: '3px',
   },
   logoutBtn: {
     padding: '0.45rem 1rem',

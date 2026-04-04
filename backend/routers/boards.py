@@ -5,6 +5,7 @@ import models
 import schemas
 import auth
 from datetime import date
+from activity_helper import log_event
 
 router = APIRouter()
 
@@ -47,6 +48,11 @@ def create_board(
         db.add(col)
     db.commit()
     db.refresh(new_board)
+
+    if new_board.team_id:
+        log_event(db, new_board.board_id, current_user.user_id, "board_created",
+                  f"{current_user.username} created board '{new_board.board_name}'")
+
     return new_board
 
 @router.get("/", response_model=list[schemas.BoardResponse])
@@ -111,6 +117,7 @@ def create_column(
         raise HTTPException(status_code=404, detail="Board not found")
     if board.team_id:
         require_admin(current_user)
+
     new_column = models.BoardColumn(
         col_name=column.col_name,
         position_index=column.position_index,
@@ -119,6 +126,10 @@ def create_column(
     db.add(new_column)
     db.commit()
     db.refresh(new_column)
+
+    log_event(db, new_column.board_id, current_user.user_id, "column_created",
+              f"{current_user.username} added column '{new_column.col_name}'")
+
     return new_column
 
 @router.delete("/columns/{column_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -132,10 +143,15 @@ def delete_column(
     ).first()
     if not column:
         raise HTTPException(status_code=404, detail="Column not found")
+
     board = db.query(models.Board).filter(
         models.Board.board_id == column.board_id
     ).first()
     if board and board.team_id:
         require_admin(current_user)
+
+    log_event(db, column.board_id, current_user.user_id, "column_deleted",
+              f"{current_user.username} deleted column '{column.col_name}'")
+
     db.delete(column)
     db.commit()

@@ -5,6 +5,8 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Board from './pages/Board'
+import Profile from "./pages/Profile";
+import MyTasks from './pages/MyTasks'
 
 const App = () => {
   return (
@@ -30,6 +32,8 @@ const App = () => {
           }
         />
         <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/my-tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
       </Routes>
     </AuthProvider>
   )

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 
 const priorityOptions = ['low', 'medium', 'high']
 
-const TaskModal = ({ task, onClose, onRefresh }) => {
+const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
   const { user } = useAuth()
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description || '')
@@ -18,8 +18,8 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
   const [teamMembers, setTeamMembers] = useState([])
 
   useEffect(() => {
-    fetchTeamMembers()
-  }, [])
+    if (isTeamBoard) fetchTeamMembers()
+  }, [isTeamBoard])
 
   const fetchTeamMembers = async () => {
     try {
@@ -42,7 +42,8 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
         description: description.trim() || null,
         priority,
         due_date: dueDate || null,
-        assigned_to: assignedTo || null,
+        // For individual boards, always assign to self
+        assigned_to: isTeamBoard ? (assignedTo || null) : user?.user_id,
       })
       onRefresh()
       onClose()
@@ -80,6 +81,7 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
   }
 
   const isAdmin = user?.role === 'admin'
+  const canEdit = isAdmin || task.assigned_to === user?.user_id || !isTeamBoard
 
   return (
     <div style={styles.overlay} onClick={onClose}>
@@ -97,7 +99,7 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
             style={styles.input}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            disabled={!isAdmin && task.assigned_to !== user?.user_id}
+            disabled={!canEdit}
           />
         </div>
 
@@ -109,7 +111,7 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Add a description..."
             rows={3}
-            disabled={!isAdmin && task.assigned_to !== user?.user_id}
+            disabled={!canEdit}
           />
         </div>
 
@@ -120,7 +122,7 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
               style={styles.select}
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              disabled={!isAdmin && task.assigned_to !== user?.user_id}
+              disabled={!canEdit}
             >
               {priorityOptions.map((p) => (
                 <option key={p} value={p}>
@@ -137,12 +139,13 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              disabled={!isAdmin && task.assigned_to !== user?.user_id}
+              disabled={!canEdit}
             />
           </div>
         </div>
 
-        {teamMembers.length > 0 && (
+        {/* Only show assignee section on team boards */}
+        {isTeamBoard && teamMembers.length > 0 && (
           <div style={styles.field}>
             <label style={styles.label}>Assigned to</label>
             {isAdmin ? (
@@ -168,7 +171,7 @@ const TaskModal = ({ task, onClose, onRefresh }) => {
           </div>
         )}
 
-        {(isAdmin || task.assigned_to === user?.user_id) && (
+        {canEdit && (
           <button style={styles.saveBtn} onClick={handleSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save changes'}
           </button>

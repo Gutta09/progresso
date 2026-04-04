@@ -5,8 +5,40 @@ import models
 import schemas
 import auth
 from datetime import timedelta
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from database import get_db
+from auth import get_current_user, hash_password, verify_password
+from models import User
+from schemas import UserUpdate, UserOut  # add these to schemas.py
+import re
 
 router = APIRouter()
+
+@router.put("/me", response_model=UserOut)
+def update_profile(data: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if data.username:
+        existing = db.query(User).filter(User.username == data.username, User.user_id != current_user.user_id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        current_user.username = data.username
+
+    if data.email:
+        existing = db.query(User).filter(User.email == data.email, User.user_id != current_user.user_id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        current_user.email = data.email
+
+    if data.new_password:
+        if not data.current_password:
+            raise HTTPException(status_code=400, detail="Current password required")
+        if not verify_password(data.current_password, current_user.password_hash):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+        current_user.password_hash = hash_password(data.new_password)
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
 
 # ─── Register ───────────────────────────────────────
 @router.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)

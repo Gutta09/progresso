@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Enum
 from sqlalchemy.orm import relationship
 from database import Base
+from datetime import datetime
+from sqlalchemy import DateTime
 import enum
 
 class RoleEnum(enum.Enum):
@@ -108,3 +110,15 @@ class Comment(Base):
 
     task = relationship("Task", back_populates="comments")
     user = relationship("User", back_populates="comments")
+
+class ActivityLog(Base):
+    __tablename__ = "activity_logs"
+
+    log_id = Column(Integer, primary_key=True, index=True)
+    event_type = Column(String)        # e.g. "task_created"
+    description = Column(String)       # e.g. "ayush created task 'Fix login bug'"
+    board_id = Column(Integer, ForeignKey("boards.board_id", ondelete="CASCADE"))
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")

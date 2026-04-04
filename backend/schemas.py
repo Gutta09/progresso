@@ -114,6 +114,23 @@ class TaskResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class MyTaskResponse(BaseModel):
+    task_id: int
+    title: str
+    description: Optional[str] = None
+    priority: PriorityEnum
+    due_date: Optional[date] = None
+    column_id: int
+    assigned_to: Optional[int] = None
+    labels: List[LabelResponse] = []
+    comments: List[CommentResponse] = []
+    column_name: str
+    board_id: Optional[int] = None
+    board_name: str
+
+    class Config:
+        from_attributes = True
+
 # ─── Board Column ────────────────────────────────────
 class BoardColumnCreate(BaseModel):
     col_name: str
@@ -145,3 +162,18 @@ class BoardResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
+
+class UserOut(BaseModel):
+    user_id: int
+    username: str
+    email: str
+    role: str
+
+    class Config:
+        from_attributes = True        

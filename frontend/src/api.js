@@ -44,3 +44,12 @@ export const getMyTeam = () => api.get('/teams/me')
 export const getTeamMembers = () => api.get('/teams/members')
 export const renameTeam = (data) => api.put('/teams/rename', data)
 export const removeMember = (userId) => api.delete(`/teams/members/${userId}`)
+
+export const updateProfile = (data) =>
+  api.put("/users/me", data).then(r => r.data);
+
+export const getBoardActivity = (boardId) =>
+  api.get(`/activity/${boardId}`).then(r => r.data)
+
+export const getMyTasks = () =>
+  api.get('/tasks/my-tasks').then(r => r.data)

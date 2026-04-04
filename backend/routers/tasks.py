@@ -5,6 +5,7 @@ import models
 import schemas
 import auth
 from datetime import datetime
+from activity_helper import log_event
 
 router = APIRouter()
 
@@ -35,7 +36,46 @@ def create_task(
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
+
+    log_event(db, column.board_id, current_user.user_id, "task_created",
+              f"{current_user.username} created task '{new_task.title}'")
+
     return new_task
+
+# ─── My Tasks ───────────────────────────────────────
+@router.get("/my-tasks", response_model=list[schemas.MyTaskResponse])
+def get_my_tasks(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    tasks = db.query(models.Task).filter(
+        models.Task.assigned_to == current_user.user_id
+    ).all()
+
+    result = []
+    for task in tasks:
+        col = db.query(models.BoardColumn).filter(
+            models.BoardColumn.column_id == task.column_id
+        ).first()
+        board = db.query(models.Board).filter(
+            models.Board.board_id == col.board_id
+        ).first() if col else None
+
+        result.append({
+            "task_id": task.task_id,
+            "title": task.title,
+            "description": task.description,
+            "priority": task.priority,
+            "due_date": task.due_date,
+            "column_id": task.column_id,
+            "assigned_to": task.assigned_to,
+            "labels": task.labels,
+            "comments": task.comments,
+            "column_name": col.col_name if col else "Unknown",
+            "board_id": board.board_id if board else None,
+            "board_name": board.board_name if board else "Unknown",
+        })
+    return result
 
 # ─── Get Single Task ────────────────────────────────
 @router.get("/{task_id}", response_model=schemas.TaskResponse)
@@ -90,14 +130,14 @@ def move_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    column = db.query(models.BoardColumn).filter(
+    new_col = db.query(models.BoardColumn).filter(
         models.BoardColumn.column_id == move.column_id
     ).first()
-    if not column:
+    if not new_col:
         raise HTTPException(status_code=404, detail="Target column not found")
 
     board = db.query(models.Board).filter(
-        models.Board.board_id == column.board_id
+        models.Board.board_id == new_col.board_id
     ).first()
 
     if board and board.team_id:
@@ -112,7 +152,12 @@ def move_task(
     task.column_id = move.column_id
     db.commit()
     db.refresh(task)
+
+    log_event(db, new_col.board_id, current_user.user_id, "task_moved",
+              f"{current_user.username} moved '{task.title}' to '{new_col.col_name}'")
+
     return task
+
 # ─── Delete Task ────────────────────────────────────
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(
@@ -123,8 +168,20 @@ def delete_task(
     task = db.query(models.Task).filter(models.Task.task_id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    col = db.query(models.BoardColumn).filter(
+        models.BoardColumn.column_id == task.column_id
+    ).first()
+
+    title = task.title
+    board_id = col.board_id if col else None
+
     db.delete(task)
     db.commit()
+
+    if board_id:
+        log_event(db, board_id, current_user.user_id, "task_deleted",
+                  f"{current_user.username} deleted task '{title}'")
 
 # ─── Add Comment ────────────────────────────────────
 @router.post("/{task_id}/comments", response_model=schemas.CommentResponse, status_code=status.HTTP_201_CREATED)
