@@ -7,7 +7,7 @@ import TaskCard from '../components/TaskCard'
 import TaskModal from '../components/TaskModal'
 import ActivityPanel from '../components/ActivityPanel'
 
-const columnAccents = ['#7c6ef0', '#34d399', '#fbbf24', '#f87171', '#60a5fa', '#a78bfa']
+const columnAccents = ['#7c6ef0', '#fbbf24', '#34d399', '#f87171', '#60a5fa', '#a78bfa']
 
 const Board = () => {
   const { id } = useParams()
