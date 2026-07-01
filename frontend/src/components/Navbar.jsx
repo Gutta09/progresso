@@ -4,6 +4,50 @@ import { useAuth } from '../context/AuthContext'
 import { createTeam, getUnreadCount } from '../api'
 import NotificationPanel from './NotificationPanel'
 
+const IconDashboard = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+  </svg>
+)
+const IconTasks = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+  </svg>
+)
+const IconBell = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+  </svg>
+)
+const IconChevron = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+)
+const IconTeam = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+  </svg>
+)
+const IconUser = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </svg>
+)
+const IconReport = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+    <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+  </svg>
+)
+const IconCheck = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+)
+
 const Navbar = () => {
   const { user, logout, workspace, switchWorkspace } = useAuth()
   const navigate = useNavigate()
@@ -37,10 +81,7 @@ const Navbar = () => {
     setShowNotifications(!showNotifications)
   }
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
+  const handleLogout = () => { logout(); navigate('/login') }
 
   const handleSwitchWorkspace = (type) => {
     switchWorkspace(type)
@@ -66,75 +107,60 @@ const Navbar = () => {
     }
   }
 
-  const workspaceLabel = workspace === 'team' ? '👥 Team' : '🧑‍💻 Individual'
   const isMyTasks = location.pathname === '/my-tasks'
+  const isReport  = location.pathname === '/report'
+  const isAdmin   = user?.role === 'admin'
+  const workspaceLabel = workspace === 'team' ? 'Team' : 'Individual'
 
   return (
     <>
-      <nav style={styles.nav}>
-        {/* Left — Logo */}
-        <div style={styles.left}>
-          <div style={styles.logoWrapper} onClick={() => navigate('/dashboard')}>
-            <div style={styles.logoIcon}>P</div>
-            <span style={styles.logo}>Progresso</span>
+      <nav style={s.nav}>
+        {/* Logo */}
+        <div style={s.left}>
+          <div style={s.logoWrapper} onClick={() => navigate('/dashboard')}>
+            <div style={s.logoIcon}>P</div>
+            <span style={s.logoText}>Progresso</span>
           </div>
         </div>
 
-        {/* Right — Actions */}
-        <div style={styles.right}>
-
-          {/* Workspace Switcher */}
-          <div style={styles.workspaceSwitcher}>
-            <button
-              style={styles.workspaceBtn}
-              onClick={() => setShowSwitcher(!showSwitcher)}
-            >
-              {workspaceLabel}
-              <span style={{
-                ...styles.chevron,
-                transform: showSwitcher ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s',
-              }}>▾</span>
+        {/* Right actions */}
+        <div style={s.right}>
+          {/* Workspace switcher */}
+          <div style={s.wsWrapper}>
+            <button style={s.wsBtn} onClick={() => setShowSwitcher(!showSwitcher)}>
+              {workspace === 'team' ? <IconTeam /> : <IconUser />}
+              <span style={{ marginLeft: 6 }}>{workspaceLabel}</span>
+              <span style={{ marginLeft: 4, opacity: 0.6, display: 'flex', transition: 'transform 0.2s', transform: showSwitcher ? 'rotate(180deg)' : 'none' }}>
+                <IconChevron />
+              </span>
             </button>
 
             {showSwitcher && (
-              <div style={styles.dropdown}>
-                <p style={styles.dropdownLabel}>Switch workspace</p>
-
+              <div style={s.dropdown}>
+                <p style={s.dropLabel}>Switch Workspace</p>
                 {[
-                  { key: 'team', icon: '👥', title: 'Team workspace', desc: "View your team's boards" },
-                  { key: 'individual', icon: '🧑‍💻', title: 'Individual workspace', desc: 'View your personal boards' },
-                ].map((w) => (
+                  { key: 'team',       icon: <IconTeam />, title: 'Team Workspace',       desc: "View your team's boards" },
+                  { key: 'individual', icon: <IconUser />, title: 'Individual Workspace',  desc: 'View your personal boards' },
+                ].map(w => (
                   <div
                     key={w.key}
-                    style={{
-                      ...styles.dropdownItem,
-                      ...(workspace === w.key ? styles.dropdownItemActive : {}),
-                    }}
+                    style={{ ...s.dropItem, ...(workspace === w.key ? s.dropItemActive : {}) }}
                     onClick={() => handleSwitchWorkspace(w.key)}
                   >
-                    <span style={styles.dropdownIcon}>{w.icon}</span>
+                    <span style={s.dropIcon}>{w.icon}</span>
                     <div>
-                      <p style={styles.dropdownItemTitle}>{w.title}</p>
-                      <p style={styles.dropdownItemDesc}>{w.desc}</p>
+                      <p style={s.dropTitle}>{w.title}</p>
+                      <p style={s.dropDesc}>{w.desc}</p>
                     </div>
-                    {workspace === w.key && <span style={styles.activeCheck}>✓</span>}
+                    {workspace === w.key && <span style={s.activeCheck}><IconCheck /></span>}
                   </div>
                 ))}
-
-                <div style={styles.dropdownDivider} />
-
-                <div
-                  style={styles.dropdownItem}
-                  onClick={() => {
-                    setShowCreateTeam(true)
-                    setShowSwitcher(false)
-                  }}
-                >
-                  <span style={styles.dropdownIcon}>👑</span>
+                <div style={s.dropDivider} />
+                <div style={s.dropItem} onClick={() => { setShowCreateTeam(true); setShowSwitcher(false) }}>
+                  <span style={s.dropIcon}><IconTeam /></span>
                   <div>
-                    <p style={styles.dropdownItemTitle}>Create new team</p>
-                    <p style={styles.dropdownItemDesc}>Start a new workspace</p>
+                    <p style={s.dropTitle}>Create New Team</p>
+                    <p style={s.dropDesc}>Start a new workspace</p>
                   </div>
                 </div>
               </div>
@@ -143,24 +169,31 @@ const Navbar = () => {
 
           {/* My Tasks */}
           <button
-            style={{
-              ...styles.navBtn,
-              ...(isMyTasks ? styles.navBtnActive : {}),
-            }}
+            style={{ ...s.navBtn, ...(isMyTasks ? s.navBtnActive : {}) }}
             onClick={() => navigate('/my-tasks')}
           >
-            ✅ My Tasks
+            <IconTasks />
+            <span style={{ marginLeft: 5 }}>My Tasks</span>
           </button>
 
-          {/* Notification Bell */}
+          {/* Report (admin + team only) */}
+          {isAdmin && workspace === 'team' && (
+            <button
+              style={{ ...s.navBtn, ...(isReport ? s.navBtnActive : {}) }}
+              onClick={() => navigate('/report')}
+            >
+              <IconReport />
+              <span style={{ marginLeft: 5 }}>Reports</span>
+            </button>
+          )}
+
+          {/* Notification bell */}
           {user?.team_id && (
-            <div style={styles.bellWrapper}>
-              <button style={styles.bellBtn} onClick={handleBellClick}>
-                <span style={styles.bellIcon}>🔔</span>
+            <div style={s.bellWrapper}>
+              <button style={s.bellBtn} onClick={handleBellClick}>
+                <IconBell />
                 {unreadCount > 0 && (
-                  <span style={styles.badge}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
+                  <span style={s.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
                 )}
               </button>
               {showNotifications && (
@@ -169,67 +202,48 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* Divider */}
-          <div style={styles.divider} />
+          <div style={s.divider} />
 
           {/* Profile */}
-          <div
-            style={styles.profileBtn}
-            onClick={() => navigate('/profile')}
-            title="Edit profile"
-          >
-            <div style={styles.avatar}>
-              {user?.username?.charAt(0).toUpperCase()}
-            </div>
-            <span style={styles.username}>{user?.username}</span>
+          <div style={s.profileBtn} onClick={() => navigate('/profile')} title="Edit profile">
+            <div style={s.avatar}>{user?.username?.charAt(0).toUpperCase()}</div>
+            <span style={s.username}>{user?.username}</span>
           </div>
 
           {/* Logout */}
-          <button style={styles.logoutBtn} onClick={handleLogout}>
-            Logout
-          </button>
+          <button style={s.logoutBtn} onClick={handleLogout}>Sign Out</button>
         </div>
       </nav>
 
-      {showSwitcher && (
-        <div style={styles.overlay} onClick={() => setShowSwitcher(false)} />
-      )}
+      {showSwitcher && <div style={s.overlay} onClick={() => setShowSwitcher(false)} />}
 
       {/* Create Team Modal */}
       {showCreateTeam && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>Create a new team</h3>
-              <button
-                style={styles.modalClose}
-                onClick={() => { setShowCreateTeam(false); setError(''); setNewTeamName('') }}
-              >✕</button>
+        <div style={s.modalOverlay}>
+          <div style={s.modal}>
+            <div style={s.modalHeader}>
+              <h3 style={s.modalTitle}>Create a New Team</h3>
+              <button style={s.modalClose} onClick={() => { setShowCreateTeam(false); setError(''); setNewTeamName('') }}>
+                &times;
+              </button>
             </div>
-            {error && <div style={styles.modalError}>{error}</div>}
-            <label style={styles.modalLabel}>Team name</label>
+            {error && <div style={s.modalError}>{error}</div>}
+            <label style={s.modalLabel}>Team Name</label>
             <input
-              style={styles.modalInput}
+              style={s.modalInput}
               type="text"
-              placeholder="e.g. Dev Squad"
+              placeholder="e.g. Engineering"
               value={newTeamName}
               onChange={(e) => setNewTeamName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateTeam()}
               autoFocus
             />
-            <div style={styles.modalActions}>
-              <button
-                style={styles.cancelBtn}
-                onClick={() => { setShowCreateTeam(false); setError(''); setNewTeamName('') }}
-              >
+            <div style={s.modalActions}>
+              <button style={s.cancelBtn} onClick={() => { setShowCreateTeam(false); setError(''); setNewTeamName('') }}>
                 Cancel
               </button>
-              <button
-                style={styles.createBtn}
-                onClick={handleCreateTeam}
-                disabled={creating}
-              >
-                {creating ? 'Creating...' : 'Create team →'}
+              <button style={s.createBtn} onClick={handleCreateTeam} disabled={creating}>
+                {creating ? 'Creating...' : 'Create Team'}
               </button>
             </div>
           </div>
@@ -239,300 +253,148 @@ const Navbar = () => {
   )
 }
 
-const styles = {
+const s = {
   nav: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0 2rem',
-    height: '60px',
-    backgroundColor: 'rgba(26, 26, 46, 0.85)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    borderBottom: '1px solid #2a2a45',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '0 1.75rem', height: '56px',
+    backgroundColor: 'rgba(30,41,59,0.92)',
+    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+    borderBottom: '1px solid #334155',
+    position: 'sticky', top: 0, zIndex: 100,
   },
   left: { display: 'flex', alignItems: 'center' },
-  logoWrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.6rem',
-    cursor: 'pointer',
-  },
+  logoWrapper: { display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' },
   logoIcon: {
-    width: '28px',
-    height: '28px',
-    borderRadius: '8px',
-    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: '0.85rem',
-    boxShadow: '0 2px 8px rgba(124,110,240,0.4)',
+    width: '28px', height: '28px', borderRadius: '7px',
+    background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#fff', fontWeight: '800', fontSize: '0.85rem',
+    boxShadow: '0 2px 8px rgba(59,130,246,0.35)',
   },
-  logo: {
-    fontSize: '1.2rem',
-    fontWeight: '800',
-    background: 'linear-gradient(135deg, #a78bfa, #7c6ef0)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+  logoText: {
+    fontSize: '1.05rem', fontWeight: '700', color: '#F1F5F9', letterSpacing: '-0.01em',
   },
-  right: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-  },
-  workspaceSwitcher: { position: 'relative' },
-  workspaceBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.4rem',
-    padding: '0.4rem 0.9rem',
-    backgroundColor: 'rgba(124,110,240,0.12)',
-    color: '#a78bfa',
-    border: '1px solid rgba(124,110,240,0.3)',
-    borderRadius: '8px',
-    fontSize: '0.85rem',
-    fontWeight: '500',
-    cursor: 'pointer',
-  },
-  chevron: {
-    fontSize: '0.7rem',
-    display: 'inline-block',
+  right: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+  wsWrapper: { position: 'relative' },
+  wsBtn: {
+    display: 'flex', alignItems: 'center',
+    padding: '0.35rem 0.8rem',
+    backgroundColor: 'rgba(59,130,246,0.1)', color: '#93C5FD',
+    border: '1px solid rgba(59,130,246,0.25)', borderRadius: '7px',
+    fontSize: '0.82rem', fontWeight: '500', cursor: 'pointer',
   },
   dropdown: {
-    position: 'absolute',
-    top: 'calc(100% + 10px)',
-    right: 0,
-    backgroundColor: '#1a1a2e',
-    borderRadius: '12px',
-    boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
-    border: '1px solid #2a2a45',
-    padding: '0.6rem',
-    width: '250px',
-    zIndex: 200,
+    position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+    backgroundColor: '#1E293B', borderRadius: '10px',
+    boxShadow: '0 16px 48px rgba(0,0,0,0.5)', border: '1px solid #334155',
+    padding: '0.5rem', width: '240px', zIndex: 200,
   },
-  dropdownLabel: {
-    fontSize: '0.7rem',
-    fontWeight: '600',
-    color: '#4a4a6a',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    padding: '0.25rem 0.6rem',
-    marginBottom: '0.25rem',
+  dropLabel: {
+    fontSize: '0.68rem', fontWeight: '600', color: '#64748B',
+    textTransform: 'uppercase', letterSpacing: '0.07em',
+    padding: '0.2rem 0.6rem', marginBottom: '0.2rem',
   },
-  dropdownItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    padding: '0.6rem 0.75rem',
-    borderRadius: '8px',
-    cursor: 'pointer',
+  dropItem: {
+    display: 'flex', alignItems: 'center', gap: '0.7rem',
+    padding: '0.55rem 0.7rem', borderRadius: '7px', cursor: 'pointer',
+    transition: 'background 0.15s',
   },
-  dropdownItemActive: {
-    backgroundColor: 'rgba(124,110,240,0.12)',
-  },
-  dropdownIcon: { fontSize: '1.1rem' },
-  dropdownItemTitle: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#f0f0ff',
-    margin: 0,
-  },
-  dropdownItemDesc: {
-    fontSize: '0.72rem',
-    color: '#8b8bab',
-    margin: 0,
-  },
-  activeCheck: {
-    marginLeft: 'auto',
-    color: '#7c6ef0',
-    fontWeight: '700',
-    fontSize: '0.85rem',
-  },
-  dropdownDivider: {
-    height: '1px',
-    backgroundColor: '#2a2a45',
-    margin: '0.5rem 0',
-  },
+  dropItemActive: { backgroundColor: 'rgba(59,130,246,0.1)' },
+  dropIcon: { color: '#94A3B8', flexShrink: 0, display: 'flex' },
+  dropTitle: { fontSize: '0.83rem', fontWeight: '600', color: '#F1F5F9', margin: 0 },
+  dropDesc:  { fontSize: '0.72rem', color: '#64748B', margin: 0 },
+  activeCheck: { marginLeft: 'auto', color: '#3B82F6', display: 'flex' },
+  dropDivider: { height: '1px', backgroundColor: '#334155', margin: '0.4rem 0' },
   overlay: { position: 'fixed', inset: 0, zIndex: 99 },
   navBtn: {
-    padding: '0.4rem 0.9rem',
-    backgroundColor: 'transparent',
-    color: '#8b8bab',
-    border: '1px solid #2a2a45',
-    borderRadius: '8px',
-    fontSize: '0.85rem',
-    fontWeight: '500',
-    cursor: 'pointer',
+    display: 'flex', alignItems: 'center',
+    padding: '0.35rem 0.8rem',
+    backgroundColor: 'transparent', color: '#94A3B8',
+    border: '1px solid #334155', borderRadius: '7px',
+    fontSize: '0.82rem', fontWeight: '500', cursor: 'pointer',
+    transition: 'all 0.15s',
   },
   navBtnActive: {
-    backgroundColor: 'rgba(124,110,240,0.12)',
-    color: '#a78bfa',
-    border: '1px solid rgba(124,110,240,0.3)',
+    backgroundColor: 'rgba(59,130,246,0.1)', color: '#93C5FD',
+    border: '1px solid rgba(59,130,246,0.25)',
   },
   bellWrapper: { position: 'relative' },
   bellBtn: {
-    position: 'relative',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '0.3rem',
-    display: 'flex',
-    alignItems: 'center',
-    borderRadius: '8px',
+    position: 'relative', background: 'none', border: 'none',
+    cursor: 'pointer', padding: '0.35rem',
+    display: 'flex', alignItems: 'center', borderRadius: '7px',
+    color: '#94A3B8',
   },
-  bellIcon: { fontSize: '1.1rem' },
   badge: {
-    position: 'absolute',
-    top: '-2px',
-    right: '-4px',
-    backgroundColor: '#ef4444',
-    color: '#fff',
-    fontSize: '0.6rem',
-    fontWeight: '700',
-    borderRadius: '999px',
-    padding: '0.1rem 0.3rem',
-    minWidth: '15px',
-    textAlign: 'center',
-    lineHeight: '1.4',
-    border: '1.5px solid #0f0f1a',
+    position: 'absolute', top: '0px', right: '-2px',
+    backgroundColor: '#EF4444', color: '#fff',
+    fontSize: '0.58rem', fontWeight: '700', borderRadius: '999px',
+    padding: '0.08rem 0.28rem', minWidth: '14px', textAlign: 'center',
+    border: '1.5px solid #0F172A',
   },
-  divider: {
-    width: '1px',
-    height: '20px',
-    backgroundColor: '#2a2a45',
-  },
+  divider: { width: '1px', height: '18px', backgroundColor: '#334155' },
   profileBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    cursor: 'pointer',
-    padding: '0.3rem 0.6rem',
-    borderRadius: '8px',
-    border: '1px solid transparent',
+    display: 'flex', alignItems: 'center', gap: '0.45rem',
+    cursor: 'pointer', padding: '0.25rem 0.5rem',
+    borderRadius: '7px', transition: 'background 0.15s',
   },
   avatar: {
-    width: '28px',
-    height: '28px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    fontSize: '0.75rem',
-    fontWeight: '700',
-    flexShrink: 0,
-    boxShadow: '0 2px 8px rgba(124,110,240,0.35)',
+    width: '26px', height: '26px', borderRadius: '50%',
+    background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#fff', fontSize: '0.72rem', fontWeight: '700', flexShrink: 0,
   },
-  username: {
-    fontSize: '0.875rem',
-    color: '#f0f0ff',
-    fontWeight: '500',
-  },
+  username: { fontSize: '0.82rem', color: '#CBD5E1', fontWeight: '500' },
   logoutBtn: {
-    padding: '0.4rem 0.9rem',
-    backgroundColor: 'transparent',
-    color: '#8b8bab',
-    border: '1px solid #2a2a45',
-    borderRadius: '8px',
-    fontSize: '0.85rem',
-    fontWeight: '500',
-    cursor: 'pointer',
+    padding: '0.35rem 0.8rem', backgroundColor: 'transparent',
+    color: '#94A3B8', border: '1px solid #334155',
+    borderRadius: '7px', fontSize: '0.82rem', fontWeight: '500', cursor: 'pointer',
   },
   modalOverlay: {
-    position: 'fixed',
-    inset: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 300,
-    backdropFilter: 'blur(4px)',
+    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 300, backdropFilter: 'blur(4px)',
   },
   modal: {
-    backgroundColor: '#1a1a2e',
-    borderRadius: '16px',
-    padding: '2rem',
-    width: '100%',
-    maxWidth: '400px',
-    boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
-    border: '1px solid #2a2a45',
+    backgroundColor: '#1E293B', borderRadius: '14px', padding: '1.75rem',
+    width: '100%', maxWidth: '400px',
+    boxShadow: '0 24px 80px rgba(0,0,0,0.6)', border: '1px solid #334155',
   },
   modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1.25rem',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem',
   },
-  modalTitle: {
-    fontSize: '1rem',
-    fontWeight: '700',
-    color: '#f0f0ff',
-    margin: 0,
-  },
+  modalTitle: { fontSize: '0.95rem', fontWeight: '700', color: '#F1F5F9', margin: 0 },
   modalClose: {
-    background: 'none',
-    border: 'none',
-    color: '#8b8bab',
-    fontSize: '1rem',
-    cursor: 'pointer',
+    background: 'none', border: 'none', color: '#64748B',
+    fontSize: '1.2rem', cursor: 'pointer', lineHeight: 1,
   },
   modalError: {
-    backgroundColor: 'rgba(248,113,113,0.1)',
-    border: '1px solid rgba(248,113,113,0.3)',
-    color: '#f87171',
-    padding: '0.75rem 1rem',
-    borderRadius: '8px',
-    marginBottom: '1rem',
-    fontSize: '0.875rem',
+    backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+    color: '#FCA5A5', padding: '0.6rem 0.85rem',
+    borderRadius: '7px', marginBottom: '1rem', fontSize: '0.82rem',
   },
   modalLabel: {
-    fontSize: '0.85rem',
-    fontWeight: '500',
-    color: '#8b8bab',
-    display: 'block',
-    marginBottom: '0.5rem',
+    fontSize: '0.75rem', fontWeight: '600', color: '#94A3B8',
+    textTransform: 'uppercase', letterSpacing: '0.05em',
+    display: 'block', marginBottom: '0.45rem',
   },
   modalInput: {
-    width: '100%',
-    padding: '0.8rem 1rem',
-    borderRadius: '10px',
-    border: '1.5px solid #2a2a45',
-    fontSize: '0.95rem',
-    outline: 'none',
-    marginBottom: '1.25rem',
-    backgroundColor: '#12122a',
-    color: '#f0f0ff',
-    boxSizing: 'border-box',
+    width: '100%', padding: '0.75rem 0.9rem',
+    borderRadius: '8px', border: '1.5px solid #334155',
+    fontSize: '0.9rem', outline: 'none', marginBottom: '1.25rem',
+    backgroundColor: '#263348', color: '#F1F5F9', boxSizing: 'border-box',
   },
-  modalActions: { display: 'flex', gap: '0.75rem' },
+  modalActions: { display: 'flex', gap: '0.6rem' },
   cancelBtn: {
-    flex: 1,
-    padding: '0.75rem',
-    backgroundColor: 'transparent',
-    color: '#8b8bab',
-    border: '1px solid #2a2a45',
-    borderRadius: '10px',
-    fontSize: '0.9rem',
-    cursor: 'pointer',
+    flex: 1, padding: '0.7rem', backgroundColor: 'transparent',
+    color: '#94A3B8', border: '1px solid #334155',
+    borderRadius: '8px', fontSize: '0.875rem', cursor: 'pointer',
   },
   createBtn: {
-    flex: 1,
-    padding: '0.75rem',
-    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    boxShadow: '0 4px 16px rgba(124,110,240,0.3)',
+    flex: 1, padding: '0.7rem',
+    background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+    color: '#fff', border: 'none', borderRadius: '8px',
+    fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer',
   },
 }
 

@@ -1,83 +1,66 @@
 const priorityColors = {
-  low: { bg: 'rgba(52,211,153,0.12)', text: '#34d399', border: 'rgba(52,211,153,0.25)' },
-  medium: { bg: 'rgba(251,191,36,0.12)', text: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
-  high: { bg: 'rgba(248,113,113,0.12)', text: '#f87171', border: 'rgba(248,113,113,0.25)' },
+  low:    { bg: 'rgba(16,185,129,0.1)',  text: '#34D399', border: 'rgba(16,185,129,0.25)' },
+  medium: { bg: 'rgba(245,158,11,0.1)',  text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
+  high:   { bg: 'rgba(239,68,68,0.1)',   text: '#F87171', border: 'rgba(239,68,68,0.25)' },
 }
 
 const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) => {
   const priority = priorityColors[task.priority] || priorityColors.medium
-  const assignee = teamMembers.find((m) => m.user_id === task.assigned_to)
+  const assignee = teamMembers.find(m => m.user_id === task.assigned_to)
 
-  const today = new Date().toDateString()
-  const dueDate = task.due_date ? new Date(task.due_date) : null
+  const today     = new Date().toDateString()
+  const dueDate   = task.due_date ? new Date(task.due_date) : null
   const isOverdue = dueDate && dueDate < new Date(today)
   const isDueToday = dueDate && dueDate.toDateString() === today
 
   return (
     <div
       style={{
-        ...styles.card,
-        ...(isOverdue ? styles.cardOverdue : {}),
-        ...(isDueToday ? styles.cardDueToday : {}),
+        ...s.card,
+        ...(isOverdue  ? s.cardOverdue   : {}),
+        ...(isDueToday ? s.cardDueToday  : {}),
       }}
       draggable
       onDragStart={() => onDragStart(task)}
       onClick={() => onClick(task)}
     >
-      {/* Due today banner */}
-      {isDueToday && (
-        <div style={styles.dueTodayBanner}>
-          🔔 Due Today
-        </div>
-      )}
+      {isDueToday && <div style={s.dueTodayBanner}>Due Today</div>}
 
-      <div style={styles.top}>
-        <p style={styles.title}>{task.title}</p>
+      <div style={s.top}>
+        <p style={s.title}>{task.title}</p>
         {onDelete && (
           <button
-            style={styles.deleteBtn}
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(task.task_id)
-            }}
+            style={s.deleteBtn}
+            onClick={(e) => { e.stopPropagation(); onDelete(task.task_id) }}
           >
-            ✕
+            &times;
           </button>
         )}
       </div>
 
-      {task.description && (
-        <p style={styles.description}>{task.description}</p>
-      )}
+      {task.description && <p style={s.description}>{task.description}</p>}
 
-      <div style={styles.bottom}>
-        <span style={{
-          ...styles.priority,
-          backgroundColor: priority.bg,
-          color: priority.text,
-          border: `1px solid ${priority.border}`,
-        }}>
+      <div style={s.bottom}>
+        <span style={{ ...s.priority, backgroundColor: priority.bg, color: priority.text, border: `1px solid ${priority.border}` }}>
           {task.priority}
         </span>
 
         {task.due_date && (
           <span style={{
-            ...styles.dueDate,
-            color: isOverdue ? '#f87171' : isDueToday ? '#fbbf24' : '#4a4a6a',
+            ...s.dueDate,
+            color: isOverdue ? '#F87171' : isDueToday ? '#FBBF24' : '#475569',
             fontWeight: isOverdue || isDueToday ? '600' : '400',
           }}>
-            {isOverdue ? '⚠ ' : ''}Due {task.due_date}
+            {isOverdue ? 'Overdue · ' : ''}Due {task.due_date}
           </span>
         )}
 
-        <div style={styles.rightBadges}>
+        <div style={s.rightBadges}>
           {task.comments?.length > 0 && (
-            <span style={styles.comments}>
-              💬 {task.comments.length}
-            </span>
+            <span style={s.comments}>{task.comments.length} comment{task.comments.length !== 1 ? 's' : ''}</span>
           )}
           {assignee && (
-            <div style={styles.avatar} title={assignee.username}>
+            <div style={s.avatar} title={assignee.username}>
               {assignee.username.charAt(0).toUpperCase()}
             </div>
           )}
@@ -87,113 +70,44 @@ const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) =>
   )
 }
 
-const styles = {
+const s = {
   card: {
-    backgroundColor: '#12122a',
-    borderRadius: '10px',
-    padding: '0.85rem 0.9rem',
-    border: '1px solid #2a2a45',
-    cursor: 'grab',
-    transition: 'border-color 0.15s, box-shadow 0.15s',
-    overflow: 'hidden',
+    backgroundColor: '#263348', borderRadius: '9px',
+    padding: '0.8rem 0.85rem', border: '1px solid #334155',
+    cursor: 'grab', transition: 'border-color 0.15s, box-shadow 0.15s', overflow: 'hidden',
   },
-  cardOverdue: {
-    border: '1px solid rgba(248,113,113,0.4)',
-    backgroundColor: 'rgba(248,113,113,0.05)',
-  },
-  cardDueToday: {
-    border: '1px solid rgba(251,191,36,0.4)',
-    backgroundColor: 'rgba(251,191,36,0.05)',
-  },
+  cardOverdue:  { border: '1px solid rgba(239,68,68,0.35)', backgroundColor: 'rgba(239,68,68,0.04)' },
+  cardDueToday: { border: '1px solid rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.04)' },
   dueTodayBanner: {
-    backgroundColor: 'rgba(251,191,36,0.12)',
-    color: '#fbbf24',
-    border: '1px solid rgba(251,191,36,0.25)',
-    fontSize: '0.7rem',
-    fontWeight: '700',
-    padding: '0.2rem 0.55rem',
-    borderRadius: '6px',
-    marginBottom: '0.6rem',
-    display: 'inline-block',
-    letterSpacing: '0.03em',
+    backgroundColor: 'rgba(245,158,11,0.1)', color: '#FBBF24',
+    border: '1px solid rgba(245,158,11,0.25)', fontSize: '0.68rem',
+    fontWeight: '700', padding: '0.18rem 0.5rem', borderRadius: '5px',
+    marginBottom: '0.55rem', display: 'inline-block', letterSpacing: '0.04em',
+    textTransform: 'uppercase',
   },
-  top: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '0.35rem',
-    gap: '0.5rem',
-  },
-  title: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    color: '#f0f0ff',
-    lineHeight: '1.4',
-    flex: 1,
-    margin: 0,
-  },
+  top: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem', gap: '0.4rem' },
+  title: { fontSize: '0.85rem', fontWeight: '600', color: '#F1F5F9', lineHeight: '1.4', flex: 1, margin: 0 },
   deleteBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#4a4a6a',
-    fontSize: '0.75rem',
-    padding: '0.1rem 0.3rem',
-    borderRadius: '4px',
-    flexShrink: 0,
-    cursor: 'pointer',
+    background: 'none', border: 'none', color: '#475569',
+    fontSize: '1rem', padding: '0.05rem 0.25rem', borderRadius: '4px', flexShrink: 0, cursor: 'pointer', lineHeight: 1,
   },
   description: {
-    fontSize: '0.78rem',
-    color: '#8b8bab',
-    marginBottom: '0.6rem',
-    lineHeight: '1.4',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-    margin: '0 0 0.6rem',
+    fontSize: '0.75rem', color: '#94A3B8', marginBottom: '0.5rem', lineHeight: '1.4',
+    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: '0 0 0.5rem',
   },
-  bottom: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    flexWrap: 'wrap',
-    marginTop: '0.6rem',
-  },
+  bottom: { display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', marginTop: '0.55rem' },
   priority: {
-    fontSize: '0.7rem',
-    fontWeight: '700',
-    padding: '0.15rem 0.55rem',
-    borderRadius: '999px',
-    textTransform: 'capitalize',
-    letterSpacing: '0.03em',
+    fontSize: '0.67rem', fontWeight: '700', padding: '0.13rem 0.5rem',
+    borderRadius: '999px', textTransform: 'capitalize', letterSpacing: '0.04em',
   },
-  dueDate: {
-    fontSize: '0.72rem',
-  },
-  rightBadges: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.4rem',
-    marginLeft: 'auto',
-  },
-  comments: {
-    fontSize: '0.72rem',
-    color: '#4a4a6a',
-  },
+  dueDate:  { fontSize: '0.7rem' },
+  rightBadges: { display: 'flex', alignItems: 'center', gap: '0.35rem', marginLeft: 'auto' },
+  comments: { fontSize: '0.68rem', color: '#475569' },
   avatar: {
-    width: '22px',
-    height: '22px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
-    color: '#ffffff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '0.62rem',
-    fontWeight: '700',
-    flexShrink: 0,
-    boxShadow: '0 2px 6px rgba(124,110,240,0.3)',
+    width: '20px', height: '20px', borderRadius: '50%',
+    background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', color: '#fff',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '0.6rem', fontWeight: '700', flexShrink: 0,
   },
 }
 

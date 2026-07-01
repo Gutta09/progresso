@@ -45,9 +45,11 @@ export const getTeamMembers = () => api.get('/teams/members')
 export const renameTeam = (data) => api.put('/teams/rename', data)
 export const removeMember = (userId) => api.delete(`/teams/members/${userId}`)
 
+// ─── User Profile ───────────────────────────────────
 export const updateProfile = (data) =>
-  api.put("/users/me", data).then(r => r.data);
+  api.put('/users/me', data).then(r => r.data)
 
+// ─── Activity ────────────────────────────────────────
 export const getBoardActivity = (boardId) =>
   api.get(`/activity/${boardId}`).then(r => r.data)
 
@@ -59,3 +61,10 @@ export const getUnreadCount = (since) =>
 
 export const getRecentActivity = () =>
   api.get('/activity/recent').then(r => r.data)
+
+// ─── Admin Report ────────────────────────────────────
+export const getAdminReport = () =>
+  api.get('/admin/report').then(r => r.data)
+
+export const exportReportCSV = () =>
+  api.get('/admin/report/export', { responseType: 'blob' }).then(r => r.data)

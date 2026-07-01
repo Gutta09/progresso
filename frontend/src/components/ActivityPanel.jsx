@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { getBoardActivity } from '../api'
 
-const eventIcon = {
-  task_created: '✅',
-  task_moved: '↗️',
-  task_deleted: '🗑️',
-  column_created: '➕',
-  column_deleted: '➖',
-  board_created: '🗂️',
+const eventLabels = {
+  task_created:   'Task created',
+  task_moved:     'Task moved',
+  task_deleted:   'Task deleted',
+  column_created: 'Column added',
+  column_deleted: 'Column removed',
+  board_created:  'Board created',
 }
 
 function timeAgo(isoString) {
@@ -24,68 +24,50 @@ export default function ActivityPanel({ boardId, onClose }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getBoardActivity(boardId)
-      .then(setLogs)
-      .finally(() => setLoading(false))
+    getBoardActivity(boardId).then(setLogs).finally(() => setLoading(false))
   }, [boardId])
 
   return (
     <>
-      <div onClick={onClose} style={styles.backdrop} />
-
-      <div style={styles.panel}>
+      <div onClick={onClose} style={s.backdrop} />
+      <div style={s.panel}>
         {/* Header */}
-        <div style={styles.header}>
-          <div style={styles.headerLeft}>
-            <div style={styles.headerIcon}>📋</div>
-            <h3 style={styles.title}>Activity</h3>
+        <div style={s.header}>
+          <div style={s.headerLeft}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            <h3 style={s.title}>Activity Log</h3>
           </div>
-          <button onClick={onClose} style={styles.closeBtn}>✕</button>
+          <button onClick={onClose} style={s.closeBtn}>&times;</button>
         </div>
 
         {/* Content */}
         {loading ? (
-          <div style={styles.emptyState}>
-            <p style={styles.emptyText}>Loading...</p>
-          </div>
+          <div style={s.emptyState}><p style={s.emptyText}>Loading...</p></div>
         ) : logs.length === 0 ? (
-          <div style={styles.emptyState}>
-            <p style={styles.emptyIcon}>📭</p>
-            <p style={styles.emptyText}>No activity yet.</p>
-            <p style={styles.emptySubtext}>Actions on this board will appear here.</p>
+          <div style={s.emptyState}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.75rem' }}>
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p style={s.emptyText}>No activity yet.</p>
+            <p style={s.emptySubtext}>Actions on this board will appear here.</p>
           </div>
         ) : (
-          <div style={styles.list}>
+          <div style={s.list}>
             {logs.map((log, index) => (
-              <div
-                key={log.log_id}
-                style={{
-                  ...styles.item,
-                  borderBottom: index < logs.length - 1
-                    ? '1px solid #2a2a45'
-                    : 'none',
-                }}
-              >
-                {/* Avatar */}
-                <div style={styles.avatarWrapper}>
-                  <div style={styles.avatar}>
-                    {log.username?.[0]?.toUpperCase()}
-                  </div>
-                  {index < logs.length - 1 && (
-                    <div style={styles.timelineLine} />
-                  )}
+              <div key={log.log_id} style={{ ...s.item, borderBottom: index < logs.length - 1 ? '1px solid #1E293B' : 'none' }}>
+                <div style={s.avatarWrapper}>
+                  <div style={s.avatar}>{log.username?.[0]?.toUpperCase()}</div>
+                  {index < logs.length - 1 && <div style={s.timelineLine} />}
                 </div>
-
-                {/* Body */}
-                <div style={styles.itemBody}>
-                  <div style={styles.itemHeader}>
-                    <span style={styles.eventIcon}>
-                      {eventIcon[log.event_type] || '•'}
-                    </span>
-                    <span style={styles.username}>{log.username}</span>
-                    <span style={styles.time}>{timeAgo(log.timestamp)}</span>
+                <div style={s.itemBody}>
+                  <div style={s.itemHeader}>
+                    <span style={s.eventLabel}>{eventLabels[log.event_type] || 'Action'}</span>
+                    <span style={s.username}>{log.username}</span>
+                    <span style={s.time}>{timeAgo(log.timestamp)}</span>
                   </div>
-                  <p style={styles.desc}>{log.description}</p>
+                  <p style={s.desc}>{log.description}</p>
                 </div>
               </div>
             ))}
@@ -96,114 +78,41 @@ export default function ActivityPanel({ boardId, onClose }) {
   )
 }
 
-const styles = {
-  backdrop: {
-    position: 'fixed', inset: 0, zIndex: 199,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    backdropFilter: 'blur(2px)',
-  },
+const s = {
+  backdrop: { position: 'fixed', inset: 0, zIndex: 199, backgroundColor: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)' },
   panel: {
-    position: 'fixed', top: 0, right: 0,
-    height: '100vh', width: '320px',
-    backgroundColor: '#1a1a2e',
-    boxShadow: '-8px 0 40px rgba(0,0,0,0.5)',
-    zIndex: 200,
-    display: 'flex', flexDirection: 'column',
-    borderLeft: '1px solid #2a2a45',
+    position: 'fixed', top: 0, right: 0, height: '100vh', width: '310px',
+    backgroundColor: '#1E293B', boxShadow: '-8px 0 40px rgba(0,0,0,0.5)',
+    zIndex: 200, display: 'flex', flexDirection: 'column', borderLeft: '1px solid #334155',
   },
   header: {
-    display: 'flex', alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '1.25rem',
-    borderBottom: '1px solid #2a2a45',
-    backgroundColor: '#12122a',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '1.1rem 1.25rem', borderBottom: '1px solid #334155', backgroundColor: '#263348',
   },
-  headerLeft: {
-    display: 'flex', alignItems: 'center', gap: '0.6rem',
-  },
-  headerIcon: {
-    width: '30px', height: '30px',
-    borderRadius: '8px',
-    backgroundColor: 'rgba(124,110,240,0.15)',
-    border: '1px solid rgba(124,110,240,0.3)',
-    display: 'flex', alignItems: 'center',
-    justifyContent: 'center', fontSize: '0.85rem',
-  },
-  title: {
-    margin: 0, fontSize: '0.95rem',
-    fontWeight: '700', color: '#f0f0ff',
-  },
-  closeBtn: {
-    background: 'none', border: 'none',
-    fontSize: '0.9rem', cursor: 'pointer',
-    color: '#4a4a6a', padding: '0.25rem',
-    borderRadius: '6px',
-  },
-  list: {
-    overflowY: 'auto', flex: 1,
-    padding: '0.5rem 1rem',
-  },
-  item: {
-    display: 'flex', gap: '0.75rem',
-    alignItems: 'flex-start',
-    padding: '0.85rem 0',
-  },
-  avatarWrapper: {
-    display: 'flex', flexDirection: 'column',
-    alignItems: 'center', gap: 0, flexShrink: 0,
-  },
+  headerLeft: { display: 'flex', alignItems: 'center', gap: '0.55rem' },
+  title: { margin: 0, fontSize: '0.9rem', fontWeight: '700', color: '#F1F5F9' },
+  closeBtn: { background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#475569', lineHeight: 1 },
+  list: { overflowY: 'auto', flex: 1, padding: '0.5rem 1rem' },
+  item: { display: 'flex', gap: '0.7rem', alignItems: 'flex-start', padding: '0.8rem 0' },
+  avatarWrapper: { display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 },
   avatar: {
-    width: '32px', height: '32px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
-    color: '#fff',
-    display: 'flex', alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '0.78rem', fontWeight: '700',
-    boxShadow: '0 2px 8px rgba(124,110,240,0.3)',
-    flexShrink: 0,
+    width: '30px', height: '30px', borderRadius: '50%',
+    background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', color: '#fff',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '0.75rem', fontWeight: '700', flexShrink: 0,
   },
-  timelineLine: {
-    width: '1px',
-    flex: 1,
-    minHeight: '20px',
-    backgroundColor: '#2a2a45',
-    marginTop: '4px',
+  timelineLine: { width: '1px', flex: 1, minHeight: '18px', backgroundColor: '#334155', marginTop: '4px' },
+  itemBody: { flex: 1, paddingBottom: '0.2rem' },
+  itemHeader: { display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem', flexWrap: 'wrap' },
+  eventLabel: {
+    fontSize: '0.68rem', fontWeight: '700', color: '#93C5FD',
+    backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)',
+    borderRadius: '4px', padding: '0.08rem 0.35rem',
   },
-  itemBody: { flex: 1, paddingBottom: '0.25rem' },
-  itemHeader: {
-    display: 'flex', alignItems: 'center',
-    gap: '0.4rem', marginBottom: '0.3rem',
-    flexWrap: 'wrap',
-  },
-  eventIcon: { fontSize: '0.8rem' },
-  username: {
-    fontSize: '0.8rem', fontWeight: '700',
-    color: '#a78bfa',
-  },
-  time: {
-    fontSize: '0.72rem', color: '#4a4a6a',
-    marginLeft: 'auto',
-  },
-  desc: {
-    margin: 0, fontSize: '0.82rem',
-    color: '#8b8bab', lineHeight: 1.5,
-  },
-  emptyState: {
-    flex: 1, display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center', justifyContent: 'center',
-    padding: '2rem',
-    textAlign: 'center',
-  },
-  emptyIcon: {
-    fontSize: '2.5rem', marginBottom: '0.75rem',
-  },
-  emptyText: {
-    color: '#f0f0ff', fontSize: '0.9rem',
-    fontWeight: '600', margin: '0 0 0.25rem',
-  },
-  emptySubtext: {
-    color: '#4a4a6a', fontSize: '0.8rem', margin: 0,
-  },
+  username: { fontSize: '0.75rem', fontWeight: '600', color: '#CBD5E1' },
+  time: { fontSize: '0.68rem', color: '#475569', marginLeft: 'auto' },
+  desc: { margin: 0, fontSize: '0.78rem', color: '#94A3B8', lineHeight: 1.5 },
+  emptyState: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' },
+  emptyText:    { color: '#F1F5F9', fontSize: '0.875rem', fontWeight: '600', margin: '0 0 0.2rem' },
+  emptySubtext: { color: '#475569', fontSize: '0.78rem', margin: 0 },
 }

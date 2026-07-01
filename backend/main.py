@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 import models
 
-from routers import users, boards, tasks, teams, activity
+from routers import users, boards, tasks, teams, activity, report
 
 Base.metadata.create_all(bind=engine)
 
@@ -22,6 +22,7 @@ app.include_router(boards.router, prefix="/boards", tags=["Boards"])
 app.include_router(tasks.router, prefix="/tasks", tags=["Tasks"])
 app.include_router(teams.router, prefix="/teams", tags=["Teams"])
 app.include_router(activity.router)
+app.include_router(report.router, prefix="/admin", tags=["Admin"])
 
 @app.get("/")
 def root():

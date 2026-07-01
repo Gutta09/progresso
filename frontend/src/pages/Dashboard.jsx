@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [members, setMembers] = useState([])
   const [showMembers, setShowMembers] = useState(false)
   const [showManageTeam, setShowManageTeam] = useState(false)
+  const [codeCopied, setCodeCopied] = useState(false)
 
   useEffect(() => {
     fetchBoards()
@@ -25,29 +26,15 @@ const Dashboard = () => {
     fetchMembers()
   }, [workspace])
 
-  const fetchTeam = async () => {
-    try {
-      const res = await getMyTeam()
-      setTeam(res.data)
-    } catch (err) {}
-  }
-
-  const fetchMembers = async () => {
-    try {
-      const res = await getTeamMembers()
-      setMembers(res.data)
-    } catch (err) {}
-  }
+  const fetchTeam    = async () => { try { const r = await getMyTeam(); setTeam(r.data) } catch {} }
+  const fetchMembers = async () => { try { const r = await getTeamMembers(); setMembers(r.data) } catch {} }
 
   const fetchBoards = async () => {
     try {
       const res = await getBoards(workspace)
       setBoards(res.data)
-    } catch (err) {
-      setError('Failed to load boards')
-    } finally {
-      setLoading(false)
-    }
+    } catch { setError('Failed to load boards') }
+    finally { setLoading(false) }
   }
 
   const handleCreateBoard = async (e) => {
@@ -62,27 +49,26 @@ const Dashboard = () => {
       setBoards([...boards, res.data])
       setNewBoardName('')
       setError('')
-    } catch (err) {
-      setError('Failed to create board')
-    } finally {
-      setCreating(false)
-    }
+    } catch { setError('Failed to create board') }
+    finally { setCreating(false) }
   }
 
   const handleDeleteBoard = async (e, boardId) => {
     e.stopPropagation()
-    if (!window.confirm('Are you sure you want to delete this board?')) return
+    if (!window.confirm('Delete this board? This action cannot be undone.')) return
     try {
       await deleteBoard(boardId)
-      setBoards(boards.filter((b) => b.board_id !== boardId))
-    } catch (err) {
-      setError('Failed to delete board')
-    }
+      setBoards(boards.filter(b => b.board_id !== boardId))
+    } catch { setError('Failed to delete board') }
   }
 
-  const totalTasks = boards.reduce(
-    (acc, b) => acc + (b.columns?.reduce((a, c) => a + (c.tasks?.length || 0), 0) || 0), 0
-  )
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(team.invite_code)
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }
+
+  const totalTasks = boards.reduce((acc, b) => acc + (b.columns?.reduce((a, c) => a + (c.tasks?.length || 0), 0) || 0), 0)
   const getGreeting = () => {
     const h = new Date().getHours()
     if (h < 12) return 'Good morning'
@@ -91,77 +77,62 @@ const Dashboard = () => {
   }
 
   const canManage = workspace === 'individual' || user?.role === 'admin'
+  const boardColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4']
 
   return (
-    <div style={styles.page}>
+    <div style={s.page}>
       <Navbar />
-      <div style={styles.container}>
+      <div style={s.container}>
 
-        {/* ── Hero header ── */}
-        <div style={styles.hero}>
+        {/* Header */}
+        <div style={s.hero}>
           <div>
-            <h2 style={styles.greeting}>
-              {getGreeting()}, {user?.username} 👋
-            </h2>
-            <p style={styles.heroSub}>
-              {workspace === 'team'
-                ? `${team?.team_name || 'Team'} workspace`
-                : 'Your personal workspace'}
+            <h2 style={s.greeting}>{getGreeting()}, {user?.username}</h2>
+            <p style={s.heroSub}>
+              {workspace === 'team' ? `${team?.team_name || 'Team'} workspace` : 'Individual workspace'}
             </p>
           </div>
-
-          {/* Stats */}
-          <div style={styles.statsRow}>
-            <div style={styles.statCard}>
-              <p style={styles.statNum}>{boards.length}</p>
-              <p style={styles.statLabel}>Boards</p>
-            </div>
-            <div style={styles.statCard}>
-              <p style={styles.statNum}>{totalTasks}</p>
-              <p style={styles.statLabel}>Tasks</p>
-            </div>
-            {workspace === 'team' && (
-              <div style={styles.statCard}>
-                <p style={styles.statNum}>{members.length}</p>
-                <p style={styles.statLabel}>Members</p>
+          <div style={s.statsRow}>
+            {[
+              { label: 'Boards', value: boards.length },
+              { label: 'Tasks',  value: totalTasks },
+              ...(workspace === 'team' ? [{ label: 'Members', value: members.length }] : []),
+            ].map(stat => (
+              <div key={stat.label} style={s.statCard}>
+                <p style={s.statNum}>{stat.value}</p>
+                <p style={s.statLabel}>{stat.label}</p>
               </div>
-            )}
+            ))}
           </div>
         </div>
 
-        {/* ── Team banner ── */}
+        {/* Team Banner */}
         {team && workspace === 'team' && (
-          <div style={styles.teamBanner}>
-            <div style={styles.teamBannerLeft}>
-              <div style={styles.teamIconBox}>👥</div>
-              <div>
-                <p style={styles.teamBannerName}>{team.team_name}</p>
-                <p style={styles.teamBannerSub}>{members.length} members</p>
+          <div style={s.teamBanner}>
+            <div style={s.teamBannerLeft}>
+              <div style={s.teamIconBox}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+                </svg>
               </div>
-              {user?.role === 'admin' && (
-                <span style={styles.adminBadge}>Admin</span>
-              )}
+              <div>
+                <p style={s.teamName}>{team.team_name}</p>
+                <p style={s.teamSub}>{members.length} {members.length === 1 ? 'member' : 'members'}</p>
+              </div>
+              {user?.role === 'admin' && <span style={s.adminBadge}>Admin</span>}
             </div>
-            <div style={styles.teamBannerRight}>
-              <button
-                style={styles.ghostBtn}
-                onClick={() => { setShowMembers(!showMembers); setShowCode(false) }}
-              >
-                👥 Members
+            <div style={s.teamBannerRight}>
+              <button style={s.ghostBtn} onClick={() => { setShowMembers(!showMembers); setShowCode(false) }}>
+                {showMembers ? 'Hide Members' : 'View Members'}
               </button>
               {user?.role === 'admin' && (
                 <>
-                  <button
-                    style={styles.ghostBtn}
-                    onClick={() => { setShowCode(!showCode); setShowMembers(false) }}
-                  >
-                    🔑 {showCode ? 'Hide code' : 'Invite code'}
+                  <button style={s.ghostBtn} onClick={() => { setShowCode(!showCode); setShowMembers(false) }}>
+                    {showCode ? 'Hide Invite Code' : 'Invite Code'}
                   </button>
-                  <button
-                    style={styles.purpleBtn}
-                    onClick={() => setShowManageTeam(true)}
-                  >
-                    Manage team
+                  <button style={s.primaryBtn} onClick={() => setShowManageTeam(true)}>
+                    Manage Team
                   </button>
                 </>
               )}
@@ -169,40 +140,30 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* ── Invite code panel ── */}
+        {/* Invite Code Panel */}
         {showCode && team && (
-          <div style={styles.invitePanel}>
-            <p style={styles.invitePanelLabel}>
-              🔑 Share this code with teammates
-            </p>
-            <div style={styles.inviteCodeRow}>
-              <span style={styles.inviteCodeText}>{team.invite_code}</span>
-              <button
-                style={styles.copyBtn}
-                onClick={() => {
-                  navigator.clipboard.writeText(team.invite_code)
-                  alert('Copied!')
-                }}
-              >
-                Copy
+          <div style={s.invitePanel}>
+            <p style={s.invitePanelLabel}>Share this code with team members</p>
+            <div style={s.inviteCodeRow}>
+              <span style={s.inviteCodeText}>{team.invite_code}</span>
+              <button style={s.copyBtn} onClick={handleCopyCode}>
+                {codeCopied ? 'Copied' : 'Copy'}
               </button>
             </div>
           </div>
         )}
 
-        {/* ── Members panel ── */}
+        {/* Members Panel */}
         {showMembers && members.length > 0 && (
-          <div style={styles.membersPanel}>
-            <p style={styles.membersPanelTitle}>Team members</p>
-            <div style={styles.membersList}>
-              {members.map((member) => (
-                <div key={member.user_id} style={styles.memberItem}>
-                  <div style={styles.memberAvatar}>
-                    {member.username.charAt(0).toUpperCase()}
-                  </div>
+          <div style={s.membersPanel}>
+            <p style={s.membersPanelTitle}>Team Members</p>
+            <div style={s.membersList}>
+              {members.map(m => (
+                <div key={m.user_id} style={s.memberItem}>
+                  <div style={s.memberAvatar}>{m.username.charAt(0).toUpperCase()}</div>
                   <div>
-                    <p style={styles.memberName}>{member.username}</p>
-                    <p style={styles.memberRole}>{member.role}</p>
+                    <p style={s.memberName}>{m.username}</p>
+                    <p style={s.memberRole}>{m.role}</p>
                   </div>
                 </div>
               ))}
@@ -210,93 +171,87 @@ const Dashboard = () => {
           </div>
         )}
 
-        {error && <div style={styles.error}>{error}</div>}
+        {error && <div style={s.errorBox}>{error}</div>}
 
-        {/* ── Section header + create form ── */}
-        <div style={styles.sectionHeader}>
-          <h3 style={styles.sectionTitle}>
-            {workspace === 'team' ? '🗂 Team Boards' : '🗂 My Boards'}
+        {/* Section Header */}
+        <div style={s.sectionHeader}>
+          <h3 style={s.sectionTitle}>
+            {workspace === 'team' ? 'Team Project Boards' : 'Personal Boards'}
           </h3>
-
           {canManage && (
-            <form onSubmit={handleCreateBoard} style={styles.createForm}>
+            <form onSubmit={handleCreateBoard} style={s.createForm}>
               <input
-                style={styles.input}
+                style={s.input}
                 type="text"
-                placeholder="New board name..."
+                placeholder="New board name"
                 value={newBoardName}
                 onChange={(e) => setNewBoardName(e.target.value)}
               />
-              <button style={styles.createBtn} type="submit" disabled={creating}>
+              <button style={s.createBtn} type="submit" disabled={creating}>
                 {creating ? 'Creating...' : '+ New Board'}
               </button>
             </form>
           )}
         </div>
 
-        {/* ── Boards grid ── */}
+        {/* Boards Grid */}
         {loading ? (
-          <div style={styles.emptyState}>
-            <p style={styles.emptyText}>Loading boards...</p>
-          </div>
+          <div style={s.emptyState}><p style={s.emptyText}>Loading boards...</p></div>
         ) : boards.length === 0 ? (
-          <div style={styles.emptyState}>
-            <p style={styles.emptyIcon}>🗂</p>
-            <p style={styles.emptyText}>No boards yet</p>
-            <p style={styles.emptySubtext}>
-              {canManage ? 'Create your first board above to get started.' : 'No boards have been created yet.'}
+          <div style={s.emptyState}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem' }}>
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <p style={s.emptyText}>No boards found</p>
+            <p style={s.emptySubtext}>
+              {canManage ? 'Create your first board using the form above.' : 'No boards have been created yet.'}
             </p>
           </div>
         ) : (
-          <div style={styles.grid}>
-            {boards.map((board) => {
-              const taskCount = board.columns?.reduce(
-                (a, c) => a + (c.tasks?.length || 0), 0
-              ) || 0
-              const colCount = board.columns?.length || 0
-              // Pick a subtle accent color per board based on id
-              const accents = ['#7c6ef0', '#34d399', '#fbbf24', '#f87171', '#60a5fa', '#a78bfa']
-              const accent = accents[board.board_id % accents.length]
+          <div style={s.grid}>
+            {boards.map((board, idx) => {
+              const taskCount = board.columns?.reduce((a, c) => a + (c.tasks?.length || 0), 0) || 0
+              const colCount  = board.columns?.length || 0
+              const color     = boardColors[board.board_id % boardColors.length]
+              const doneCount = board.columns?.filter(c =>
+                c.col_name?.toLowerCase().includes('done') || c.col_name?.toLowerCase().includes('complete')
+              ).reduce((a, c) => a + (c.tasks?.length || 0), 0) || 0
+              const pct = taskCount > 0 ? Math.round((doneCount / taskCount) * 100) : 0
 
               return (
                 <div
                   key={board.board_id}
-                  style={styles.card}
+                  style={s.card}
                   onClick={() => navigate(`/board/${board.board_id}`)}
                 >
-                  {/* Color strip */}
-                  <div style={{ ...styles.cardStrip, backgroundColor: accent }} />
-
-                  <div style={styles.cardBody}>
-                    <div style={styles.cardTop}>
-                      <h3 style={styles.boardName}>{board.board_name}</h3>
+                  <div style={{ ...s.cardStrip, backgroundColor: color }} />
+                  <div style={s.cardBody}>
+                    <div style={s.cardTop}>
+                      <h3 style={s.boardName}>{board.board_name}</h3>
                       {canManage && (
                         <button
-                          style={styles.deleteBtn}
+                          style={s.deleteBtn}
                           onClick={(e) => handleDeleteBoard(e, board.board_id)}
                           title="Delete board"
                         >
-                          ✕
+                          &times;
                         </button>
                       )}
                     </div>
-
-                    <div style={styles.cardMeta}>
-                      <span style={styles.metaChip}>
-                        📋 {colCount} {colCount === 1 ? 'column' : 'columns'}
-                      </span>
-                      <span style={styles.metaChip}>
-                        ✅ {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
-                      </span>
+                    <div style={s.cardMeta}>
+                      <span style={s.metaChip}>{colCount} {colCount === 1 ? 'column' : 'columns'}</span>
+                      <span style={s.metaChip}>{taskCount} {taskCount === 1 ? 'task' : 'tasks'}</span>
                     </div>
-
-                    <div style={styles.cardFooter}>
-                      <span style={styles.cardDate}>
-                        {board.created_date
-                          ? `Created ${board.created_date}`
-                          : 'Created recently'}
+                    {/* Progress bar */}
+                    <div style={s.progressBar}>
+                      <div style={{ ...s.progressFill, width: `${pct}%`, backgroundColor: color }} />
+                    </div>
+                    <div style={s.cardFooter}>
+                      <span style={s.cardDate}>
+                        {board.created_date ? `Created ${board.created_date}` : 'Created recently'}
                       </span>
-                      <span style={{ ...styles.cardArrow, color: accent }}>→</span>
+                      <span style={{ ...s.cardPct, color }}>{pct}% complete</span>
                     </div>
                   </div>
                 </div>
@@ -318,368 +273,133 @@ const Dashboard = () => {
   )
 }
 
-const styles = {
-  page: {
-    minHeight: '100vh',
-    backgroundColor: '#0f0f1a',
-  },
-  container: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    padding: '2rem',
-  },
+const s = {
+  page: { minHeight: '100vh', backgroundColor: '#0F172A' },
+  container: { maxWidth: '1120px', margin: '0 auto', padding: '2rem 1.5rem' },
   hero: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1.75rem',
-    flexWrap: 'wrap',
-    gap: '1rem',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem',
   },
-  greeting: {
-    fontSize: '1.75rem',
-    fontWeight: '800',
-    color: '#f0f0ff',
-    margin: '0 0 0.25rem',
-  },
-  heroSub: {
-    fontSize: '0.9rem',
-    color: '#8b8bab',
-    margin: 0,
-  },
-  statsRow: {
-    display: 'flex',
-    gap: '0.75rem',
-  },
+  greeting: { fontSize: '1.6rem', fontWeight: '700', color: '#F1F5F9', margin: '0 0 0.2rem', letterSpacing: '-0.02em' },
+  heroSub: { fontSize: '0.875rem', color: '#64748B', margin: 0 },
+  statsRow: { display: 'flex', gap: '0.75rem' },
   statCard: {
-    backgroundColor: '#1a1a2e',
-    border: '1px solid #2a2a45',
-    borderRadius: '12px',
-    padding: '0.75rem 1.25rem',
-    textAlign: 'center',
-    minWidth: '70px',
+    backgroundColor: '#1E293B', border: '1px solid #334155',
+    borderRadius: '10px', padding: '0.7rem 1.1rem', textAlign: 'center', minWidth: '72px',
   },
-  statNum: {
-    fontSize: '1.5rem',
-    fontWeight: '800',
-    color: '#a78bfa',
-    margin: '0 0 0.1rem',
-  },
-  statLabel: {
-    fontSize: '0.72rem',
-    color: '#8b8bab',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    margin: 0,
-  },
+  statNum: { fontSize: '1.4rem', fontWeight: '700', color: '#3B82F6', margin: '0 0 0.1rem' },
+  statLabel: { fontSize: '0.7rem', color: '#64748B', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 },
   teamBanner: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#1a1a2e',
-    border: '1px solid #2a2a45',
-    borderRadius: '12px',
-    padding: '1rem 1.25rem',
-    marginBottom: '1rem',
-    flexWrap: 'wrap',
-    gap: '0.75rem',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '10px',
+    padding: '0.9rem 1.1rem', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.75rem',
   },
-  teamBannerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-  },
+  teamBannerLeft: { display: 'flex', alignItems: 'center', gap: '0.7rem' },
   teamIconBox: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    backgroundColor: 'rgba(124,110,240,0.15)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1rem',
-    border: '1px solid rgba(124,110,240,0.3)',
+    width: '34px', height: '34px', borderRadius: '8px',
+    backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  teamBannerName: {
-    fontSize: '0.95rem',
-    fontWeight: '700',
-    color: '#f0f0ff',
-    margin: 0,
-  },
-  teamBannerSub: {
-    fontSize: '0.75rem',
-    color: '#8b8bab',
-    margin: 0,
-  },
+  teamName: { fontSize: '0.9rem', fontWeight: '700', color: '#F1F5F9', margin: 0 },
+  teamSub:  { fontSize: '0.72rem', color: '#64748B', margin: 0 },
   adminBadge: {
-    backgroundColor: 'rgba(124,110,240,0.15)',
-    color: '#a78bfa',
-    border: '1px solid rgba(124,110,240,0.3)',
-    borderRadius: '999px',
-    padding: '0.2rem 0.65rem',
-    fontSize: '0.72rem',
-    fontWeight: '700',
-    letterSpacing: '0.04em',
+    backgroundColor: 'rgba(59,130,246,0.1)', color: '#93C5FD',
+    border: '1px solid rgba(59,130,246,0.25)', borderRadius: '999px',
+    padding: '0.18rem 0.6rem', fontSize: '0.7rem', fontWeight: '700', letterSpacing: '0.04em',
   },
-  teamBannerRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.6rem',
-    flexWrap: 'wrap',
-  },
+  teamBannerRight: { display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' },
   ghostBtn: {
-    padding: '0.4rem 0.9rem',
-    backgroundColor: 'transparent',
-    color: '#8b8bab',
-    border: '1px solid #2a2a45',
-    borderRadius: '8px',
-    fontSize: '0.82rem',
-    fontWeight: '500',
-    cursor: 'pointer',
+    padding: '0.38rem 0.85rem', backgroundColor: 'transparent', color: '#94A3B8',
+    border: '1px solid #334155', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '500', cursor: 'pointer',
   },
-  purpleBtn: {
-    padding: '0.4rem 0.9rem',
-    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '0.82rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    boxShadow: '0 2px 10px rgba(124,110,240,0.3)',
+  primaryBtn: {
+    padding: '0.38rem 0.85rem', background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)',
+    color: '#fff', border: 'none', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer',
   },
   invitePanel: {
-    background: 'rgba(124,110,240,0.08)',
-    border: '1.5px dashed rgba(124,110,240,0.4)',
-    borderRadius: '12px',
-    padding: '1.25rem',
-    marginBottom: '1rem',
-    textAlign: 'center',
+    backgroundColor: 'rgba(59,130,246,0.06)', border: '1.5px dashed rgba(59,130,246,0.3)',
+    borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '0.75rem', textAlign: 'center',
   },
-  invitePanelLabel: {
-    fontSize: '0.85rem',
-    color: '#8b8bab',
-    marginBottom: '0.75rem',
-  },
-  inviteCodeRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '1rem',
-  },
-  inviteCodeText: {
-    fontSize: '2rem',
-    fontWeight: '800',
-    color: '#a78bfa',
-    letterSpacing: '0.3em',
-  },
+  invitePanelLabel: { fontSize: '0.8rem', color: '#94A3B8', marginBottom: '0.65rem' },
+  inviteCodeRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' },
+  inviteCodeText: { fontSize: '1.8rem', fontWeight: '800', color: '#93C5FD', letterSpacing: '0.3em' },
   copyBtn: {
-    padding: '0.45rem 1rem',
-    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    cursor: 'pointer',
+    padding: '0.4rem 1rem', background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)',
+    color: '#fff', border: 'none', borderRadius: '7px', fontSize: '0.82rem', fontWeight: '600', cursor: 'pointer',
   },
   membersPanel: {
-    backgroundColor: '#1a1a2e',
-    border: '1px solid #2a2a45',
-    borderRadius: '12px',
-    padding: '1.25rem',
-    marginBottom: '1rem',
+    backgroundColor: '#1E293B', border: '1px solid #334155',
+    borderRadius: '10px', padding: '1.1rem', marginBottom: '0.75rem',
   },
   membersPanelTitle: {
-    fontSize: '0.82rem',
-    fontWeight: '600',
-    color: '#8b8bab',
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
-    marginBottom: '0.75rem',
+    fontSize: '0.72rem', fontWeight: '600', color: '#64748B',
+    textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.7rem',
   },
-  membersList: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '0.75rem',
-  },
+  membersList: { display: 'flex', flexWrap: 'wrap', gap: '0.65rem' },
   memberItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.6rem',
-    backgroundColor: '#12122a',
-    border: '1px solid #2a2a45',
-    borderRadius: '10px',
-    padding: '0.5rem 0.85rem 0.5rem 0.5rem',
+    display: 'flex', alignItems: 'center', gap: '0.55rem',
+    backgroundColor: '#263348', border: '1px solid #334155',
+    borderRadius: '8px', padding: '0.45rem 0.8rem 0.45rem 0.45rem',
   },
   memberAvatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
-    color: '#ffffff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: '700',
-    fontSize: '0.85rem',
-    flexShrink: 0,
+    width: '30px', height: '30px', borderRadius: '50%',
+    background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', color: '#fff',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontWeight: '700', fontSize: '0.8rem', flexShrink: 0,
   },
-  memberName: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    color: '#f0f0ff',
-    margin: 0,
-  },
-  memberRole: {
-    fontSize: '0.72rem',
-    color: '#8b8bab',
-    textTransform: 'capitalize',
-    margin: 0,
-  },
-  error: {
-    backgroundColor: 'rgba(248,113,113,0.1)',
-    border: '1px solid rgba(248,113,113,0.3)',
-    color: '#f87171',
-    padding: '0.75rem 1rem',
-    borderRadius: '8px',
-    marginBottom: '1rem',
-    fontSize: '0.875rem',
+  memberName: { fontSize: '0.82rem', fontWeight: '600', color: '#F1F5F9', margin: 0 },
+  memberRole: { fontSize: '0.7rem', color: '#64748B', textTransform: 'capitalize', margin: 0 },
+  errorBox: {
+    backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+    color: '#FCA5A5', padding: '0.7rem 1rem', borderRadius: '8px',
+    marginBottom: '1rem', fontSize: '0.85rem',
   },
   sectionHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '1.25rem',
-    flexWrap: 'wrap',
-    gap: '0.75rem',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem',
   },
-  sectionTitle: {
-    fontSize: '1rem',
-    fontWeight: '700',
-    color: '#f0f0ff',
-    margin: 0,
-  },
-  createForm: {
-    display: 'flex',
-    gap: '0.6rem',
-  },
+  sectionTitle: { fontSize: '0.95rem', fontWeight: '700', color: '#CBD5E1', margin: 0 },
+  createForm: { display: 'flex', gap: '0.5rem' },
   input: {
-    flex: 1,
-    padding: '0.7rem 1rem',
-    borderRadius: '10px',
-    border: '1.5px solid #2a2a45',
-    fontSize: '0.9rem',
-    outline: 'none',
-    backgroundColor: '#12122a',
-    color: '#f0f0ff',
-    minWidth: '180px',
+    flex: 1, padding: '0.6rem 0.9rem', borderRadius: '8px',
+    border: '1.5px solid #334155', fontSize: '0.875rem', outline: 'none',
+    backgroundColor: '#1E293B', color: '#F1F5F9', minWidth: '180px',
   },
   createBtn: {
-    padding: '0.7rem 1.25rem',
-    background: 'linear-gradient(135deg, #7c6ef0, #5b4fcf)',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '0.88rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    boxShadow: '0 2px 10px rgba(124,110,240,0.3)',
+    padding: '0.6rem 1.1rem', background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)',
+    color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.85rem',
+    fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap',
   },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-    gap: '1rem',
-  },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1rem' },
   card: {
-    backgroundColor: '#1a1a2e',
-    borderRadius: '14px',
-    border: '1px solid #2a2a45',
-    cursor: 'pointer',
-    overflow: 'hidden',
-    transition: 'transform 0.15s, box-shadow 0.15s, border-color 0.15s',
+    backgroundColor: '#1E293B', borderRadius: '12px',
+    border: '1px solid #334155', cursor: 'pointer', overflow: 'hidden',
+    transition: 'border-color 0.15s, transform 0.15s',
   },
-  cardStrip: {
-    height: '4px',
-    width: '100%',
-  },
-  cardBody: {
-    padding: '1.25rem',
-  },
-  cardTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '0.75rem',
-  },
-  boardName: {
-    fontSize: '1rem',
-    fontWeight: '700',
-    color: '#f0f0ff',
-    margin: 0,
-    flex: 1,
-    lineHeight: 1.4,
-  },
+  cardStrip: { height: '3px', width: '100%' },
+  cardBody: { padding: '1.1rem' },
+  cardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' },
+  boardName: { fontSize: '0.95rem', fontWeight: '700', color: '#F1F5F9', margin: 0, flex: 1, lineHeight: 1.4 },
   deleteBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#4a4a6a',
-    fontSize: '0.85rem',
-    padding: '0.2rem 0.4rem',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    flexShrink: 0,
+    background: 'none', border: 'none', color: '#475569',
+    fontSize: '1rem', padding: '0.1rem 0.3rem', borderRadius: '4px', cursor: 'pointer', flexShrink: 0,
   },
-  cardMeta: {
-    display: 'flex',
-    gap: '0.5rem',
-    flexWrap: 'wrap',
-    marginBottom: '0.85rem',
-  },
+  cardMeta: { display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '0.8rem' },
   metaChip: {
-    fontSize: '0.75rem',
-    color: '#8b8bab',
-    backgroundColor: '#12122a',
-    border: '1px solid #2a2a45',
-    borderRadius: '999px',
-    padding: '0.2rem 0.65rem',
+    fontSize: '0.72rem', color: '#64748B', backgroundColor: '#263348',
+    border: '1px solid #334155', borderRadius: '999px', padding: '0.18rem 0.6rem',
   },
-  cardFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardDate: {
-    fontSize: '0.75rem',
-    color: '#4a4a6a',
-  },
-  cardArrow: {
-    fontSize: '1rem',
-    fontWeight: '700',
-  },
+  progressBar: { height: '3px', backgroundColor: '#263348', borderRadius: '999px', marginBottom: '0.75rem' },
+  progressFill: { height: '100%', borderRadius: '999px', transition: 'width 0.3s' },
+  cardFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  cardDate: { fontSize: '0.72rem', color: '#475569' },
+  cardPct:  { fontSize: '0.72rem', fontWeight: '600' },
   emptyState: {
-    textAlign: 'center',
-    padding: '4rem 2rem',
-    backgroundColor: '#1a1a2e',
-    border: '1px solid #2a2a45',
-    borderRadius: '16px',
+    textAlign: 'center', padding: '4rem 2rem',
+    backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '14px',
   },
-  emptyIcon: {
-    fontSize: '3rem',
-    marginBottom: '1rem',
-  },
-  emptyText: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    color: '#f0f0ff',
-    marginBottom: '0.5rem',
-  },
-  emptySubtext: {
-    fontSize: '0.875rem',
-    color: '#8b8bab',
-  },
+  emptyText:    { fontSize: '1rem', fontWeight: '600', color: '#CBD5E1', marginBottom: '0.5rem' },
+  emptySubtext: { fontSize: '0.85rem', color: '#64748B' },
 }
 
 export default Dashboard
