@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { createTeam, getUnreadCount } from '../api'
 import NotificationPanel from './NotificationPanel'
+import { IconClose, IconSun, IconMoon } from './icons'
 
 const IconDashboard = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -49,7 +51,8 @@ const IconCheck = () => (
 )
 
 const Navbar = () => {
-  const { user, logout, workspace, switchWorkspace } = useAuth()
+  const { user, logout, workspace, switchWorkspace, refreshUser } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const [showSwitcher, setShowSwitcher] = useState(false)
@@ -72,7 +75,9 @@ const Navbar = () => {
       const lastSeen = localStorage.getItem('notifications_last_seen')
       const data = await getUnreadCount(lastSeen)
       setUnreadCount(data.count)
-    } catch (err) {}
+    } catch (err) {
+      console.error('Failed to fetch unread notification count:', err)
+    }
   }
 
   const handleBellClick = () => {
@@ -95,11 +100,11 @@ const Navbar = () => {
     setError('')
     try {
       await createTeam({ team_name: newTeamName.trim() })
+      await refreshUser()
       switchWorkspace('team')
       setShowCreateTeam(false)
       setShowSwitcher(false)
       navigate('/dashboard')
-      window.location.reload()
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create team')
     } finally {
@@ -202,6 +207,15 @@ const Navbar = () => {
             </div>
           )}
 
+          {/* Theme toggle */}
+          <button
+            style={s.themeBtn}
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          >
+            {theme === 'dark' ? <IconSun /> : <IconMoon />}
+          </button>
+
           <div style={s.divider} />
 
           {/* Profile */}
@@ -224,7 +238,7 @@ const Navbar = () => {
             <div style={s.modalHeader}>
               <h3 style={s.modalTitle}>Create a New Team</h3>
               <button style={s.modalClose} onClick={() => { setShowCreateTeam(false); setError(''); setNewTeamName('') }}>
-                &times;
+                <IconClose size={18} />
               </button>
             </div>
             {error && <div style={s.modalError}>{error}</div>}
@@ -257,40 +271,40 @@ const s = {
   nav: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: '0 1.75rem', height: '56px',
-    backgroundColor: 'rgba(30,41,59,0.92)',
+    backgroundColor: 'var(--bg-surface)',
     backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-    borderBottom: '1px solid #334155',
+    borderBottom: '1px solid var(--border)',
     position: 'sticky', top: 0, zIndex: 100,
   },
   left: { display: 'flex', alignItems: 'center' },
   logoWrapper: { display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' },
   logoIcon: {
     width: '28px', height: '28px', borderRadius: '7px',
-    background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+    background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#fff', fontWeight: '800', fontSize: '0.85rem',
     boxShadow: '0 2px 8px rgba(59,130,246,0.35)',
   },
   logoText: {
-    fontSize: '1.05rem', fontWeight: '700', color: '#F1F5F9', letterSpacing: '-0.01em',
+    fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.01em',
   },
   right: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
   wsWrapper: { position: 'relative' },
   wsBtn: {
     display: 'flex', alignItems: 'center',
     padding: '0.35rem 0.8rem',
-    backgroundColor: 'rgba(59,130,246,0.1)', color: '#93C5FD',
-    border: '1px solid rgba(59,130,246,0.25)', borderRadius: '7px',
+    backgroundColor: 'var(--accent-soft)', color: 'var(--accent)',
+    border: '1px solid var(--accent-border)', borderRadius: '7px',
     fontSize: '0.82rem', fontWeight: '500', cursor: 'pointer',
   },
   dropdown: {
     position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-    backgroundColor: '#1E293B', borderRadius: '10px',
-    boxShadow: '0 16px 48px rgba(0,0,0,0.5)', border: '1px solid #334155',
+    backgroundColor: 'var(--bg-surface)', borderRadius: '10px',
+    boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
     padding: '0.5rem', width: '240px', zIndex: 200,
   },
   dropLabel: {
-    fontSize: '0.68rem', fontWeight: '600', color: '#64748B',
+    fontSize: '0.68rem', fontWeight: '600', color: 'var(--text-muted)',
     textTransform: 'uppercase', letterSpacing: '0.07em',
     padding: '0.2rem 0.6rem', marginBottom: '0.2rem',
   },
@@ -299,40 +313,46 @@ const s = {
     padding: '0.55rem 0.7rem', borderRadius: '7px', cursor: 'pointer',
     transition: 'background 0.15s',
   },
-  dropItemActive: { backgroundColor: 'rgba(59,130,246,0.1)' },
-  dropIcon: { color: '#94A3B8', flexShrink: 0, display: 'flex' },
-  dropTitle: { fontSize: '0.83rem', fontWeight: '600', color: '#F1F5F9', margin: 0 },
-  dropDesc:  { fontSize: '0.72rem', color: '#64748B', margin: 0 },
-  activeCheck: { marginLeft: 'auto', color: '#3B82F6', display: 'flex' },
-  dropDivider: { height: '1px', backgroundColor: '#334155', margin: '0.4rem 0' },
+  dropItemActive: { backgroundColor: 'var(--accent-soft)' },
+  dropIcon: { color: 'var(--text-secondary)', flexShrink: 0, display: 'flex' },
+  dropTitle: { fontSize: '0.83rem', fontWeight: '600', color: 'var(--text-primary)', margin: 0 },
+  dropDesc:  { fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 },
+  activeCheck: { marginLeft: 'auto', color: 'var(--accent)', display: 'flex' },
+  dropDivider: { height: '1px', backgroundColor: 'var(--border)', margin: '0.4rem 0' },
   overlay: { position: 'fixed', inset: 0, zIndex: 99 },
   navBtn: {
     display: 'flex', alignItems: 'center',
     padding: '0.35rem 0.8rem',
-    backgroundColor: 'transparent', color: '#94A3B8',
-    border: '1px solid #334155', borderRadius: '7px',
+    backgroundColor: 'transparent', color: 'var(--text-secondary)',
+    border: '1px solid var(--border)', borderRadius: '7px',
     fontSize: '0.82rem', fontWeight: '500', cursor: 'pointer',
     transition: 'all 0.15s',
   },
   navBtnActive: {
-    backgroundColor: 'rgba(59,130,246,0.1)', color: '#93C5FD',
-    border: '1px solid rgba(59,130,246,0.25)',
+    backgroundColor: 'var(--accent-soft)', color: 'var(--accent)',
+    border: '1px solid var(--accent-border)',
   },
   bellWrapper: { position: 'relative' },
   bellBtn: {
     position: 'relative', background: 'none', border: 'none',
     cursor: 'pointer', padding: '0.35rem',
     display: 'flex', alignItems: 'center', borderRadius: '7px',
-    color: '#94A3B8',
+    color: 'var(--text-secondary)',
   },
   badge: {
     position: 'absolute', top: '0px', right: '-2px',
-    backgroundColor: '#EF4444', color: '#fff',
+    backgroundColor: 'var(--danger)', color: '#fff',
     fontSize: '0.58rem', fontWeight: '700', borderRadius: '999px',
     padding: '0.08rem 0.28rem', minWidth: '14px', textAlign: 'center',
-    border: '1.5px solid #0F172A',
+    border: '1.5px solid var(--bg-base)',
   },
-  divider: { width: '1px', height: '18px', backgroundColor: '#334155' },
+  themeBtn: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'none', border: '1px solid var(--border)',
+    borderRadius: '7px', cursor: 'pointer', padding: '0.35rem 0.55rem',
+    color: 'var(--text-secondary)',
+  },
+  divider: { width: '1px', height: '18px', backgroundColor: 'var(--border)' },
   profileBtn: {
     display: 'flex', alignItems: 'center', gap: '0.45rem',
     cursor: 'pointer', padding: '0.25rem 0.5rem',
@@ -340,59 +360,59 @@ const s = {
   },
   avatar: {
     width: '26px', height: '26px', borderRadius: '50%',
-    background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+    background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#fff', fontSize: '0.72rem', fontWeight: '700', flexShrink: 0,
   },
-  username: { fontSize: '0.82rem', color: '#CBD5E1', fontWeight: '500' },
+  username: { fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: '500' },
   logoutBtn: {
     padding: '0.35rem 0.8rem', backgroundColor: 'transparent',
-    color: '#94A3B8', border: '1px solid #334155',
+    color: 'var(--text-secondary)', border: '1px solid var(--border)',
     borderRadius: '7px', fontSize: '0.82rem', fontWeight: '500', cursor: 'pointer',
   },
   modalOverlay: {
-    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)',
+    position: 'fixed', inset: 0, backgroundColor: 'var(--overlay)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     zIndex: 300, backdropFilter: 'blur(4px)',
   },
   modal: {
-    backgroundColor: '#1E293B', borderRadius: '14px', padding: '1.75rem',
+    backgroundColor: 'var(--bg-surface)', borderRadius: '14px', padding: '1.75rem',
     width: '100%', maxWidth: '400px',
-    boxShadow: '0 24px 80px rgba(0,0,0,0.6)', border: '1px solid #334155',
+    boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
   },
   modalHeader: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem',
   },
-  modalTitle: { fontSize: '0.95rem', fontWeight: '700', color: '#F1F5F9', margin: 0 },
+  modalTitle: { fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 },
   modalClose: {
-    background: 'none', border: 'none', color: '#64748B',
-    fontSize: '1.2rem', cursor: 'pointer', lineHeight: 1,
+    background: 'none', border: 'none', color: 'var(--text-muted)',
+    display: 'flex', cursor: 'pointer', lineHeight: 1,
   },
   modalError: {
-    backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-    color: '#FCA5A5', padding: '0.6rem 0.85rem',
+    backgroundColor: 'var(--danger-soft)', border: '1px solid var(--danger-border, rgba(239,68,68,0.3))',
+    color: 'var(--danger)', padding: '0.6rem 0.85rem',
     borderRadius: '7px', marginBottom: '1rem', fontSize: '0.82rem',
   },
   modalLabel: {
-    fontSize: '0.75rem', fontWeight: '600', color: '#94A3B8',
+    fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)',
     textTransform: 'uppercase', letterSpacing: '0.05em',
     display: 'block', marginBottom: '0.45rem',
   },
   modalInput: {
     width: '100%', padding: '0.75rem 0.9rem',
-    borderRadius: '8px', border: '1.5px solid #334155',
+    borderRadius: '8px', border: '1.5px solid var(--border)',
     fontSize: '0.9rem', outline: 'none', marginBottom: '1.25rem',
-    backgroundColor: '#263348', color: '#F1F5F9', boxSizing: 'border-box',
+    backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)', boxSizing: 'border-box',
   },
   modalActions: { display: 'flex', gap: '0.6rem' },
   cancelBtn: {
     flex: 1, padding: '0.7rem', backgroundColor: 'transparent',
-    color: '#94A3B8', border: '1px solid #334155',
+    color: 'var(--text-secondary)', border: '1px solid var(--border)',
     borderRadius: '8px', fontSize: '0.875rem', cursor: 'pointer',
   },
   createBtn: {
     flex: 1, padding: '0.7rem',
-    background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+    background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))',
     color: '#fff', border: 'none', borderRadius: '8px',
     fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer',
   },

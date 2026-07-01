@@ -1,17 +1,21 @@
+import { IconClose } from './icons'
+
 const priorityColors = {
-  low:    { bg: 'rgba(16,185,129,0.1)',  text: '#34D399', border: 'rgba(16,185,129,0.25)' },
-  medium: { bg: 'rgba(245,158,11,0.1)',  text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
-  high:   { bg: 'rgba(239,68,68,0.1)',   text: '#F87171', border: 'rgba(239,68,68,0.25)' },
+  low:    { bg: 'var(--priority-low-soft)',    text: 'var(--priority-low)',    border: 'var(--priority-low-border)' },
+  medium: { bg: 'var(--priority-medium-soft)', text: 'var(--priority-medium)', border: 'var(--priority-medium-border)' },
+  high:   { bg: 'var(--priority-high-soft)',   text: 'var(--priority-high)',   border: 'var(--priority-high-border)' },
 }
 
 const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) => {
   const priority = priorityColors[task.priority] || priorityColors.medium
   const assignee = teamMembers.find(m => m.user_id === task.assigned_to)
 
-  const today     = new Date().toDateString()
-  const dueDate   = task.due_date ? new Date(task.due_date) : null
-  const isOverdue = dueDate && dueDate < new Date(today)
-  const isDueToday = dueDate && dueDate.toDateString() === today
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = task.due_date ? new Date(task.due_date) : null
+  if (dueDate) dueDate.setHours(0, 0, 0, 0)
+  const isOverdue = dueDate && dueDate < today
+  const isDueToday = dueDate && dueDate.getTime() === today.getTime()
 
   return (
     <div
@@ -33,7 +37,7 @@ const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) =>
             style={s.deleteBtn}
             onClick={(e) => { e.stopPropagation(); onDelete(task.task_id) }}
           >
-            &times;
+            <IconClose size={13} />
           </button>
         )}
       </div>
@@ -48,7 +52,7 @@ const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) =>
         {task.due_date && (
           <span style={{
             ...s.dueDate,
-            color: isOverdue ? '#F87171' : isDueToday ? '#FBBF24' : '#475569',
+            color: isOverdue ? 'var(--danger)' : isDueToday ? 'var(--priority-medium)' : 'var(--text-muted)',
             fontWeight: isOverdue || isDueToday ? '600' : '400',
           }}>
             {isOverdue ? 'Overdue · ' : ''}Due {task.due_date}
@@ -72,27 +76,27 @@ const TaskCard = ({ task, onDragStart, onDelete, onClick, teamMembers = [] }) =>
 
 const s = {
   card: {
-    backgroundColor: '#263348', borderRadius: '9px',
-    padding: '0.8rem 0.85rem', border: '1px solid #334155',
+    backgroundColor: 'var(--bg-raised)', borderRadius: '9px',
+    padding: '0.8rem 0.85rem', border: '1px solid var(--border)',
     cursor: 'grab', transition: 'border-color 0.15s, box-shadow 0.15s', overflow: 'hidden',
   },
-  cardOverdue:  { border: '1px solid rgba(239,68,68,0.35)', backgroundColor: 'rgba(239,68,68,0.04)' },
-  cardDueToday: { border: '1px solid rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.04)' },
+  cardOverdue:  { border: '1px solid var(--priority-high-border)', backgroundColor: 'var(--danger-soft)' },
+  cardDueToday: { border: '1px solid var(--priority-medium-border)', backgroundColor: 'var(--warning-soft)' },
   dueTodayBanner: {
-    backgroundColor: 'rgba(245,158,11,0.1)', color: '#FBBF24',
-    border: '1px solid rgba(245,158,11,0.25)', fontSize: '0.68rem',
+    backgroundColor: 'var(--priority-medium-soft)', color: 'var(--priority-medium)',
+    border: '1px solid var(--priority-medium-border)', fontSize: '0.68rem',
     fontWeight: '700', padding: '0.18rem 0.5rem', borderRadius: '5px',
     marginBottom: '0.55rem', display: 'inline-block', letterSpacing: '0.04em',
     textTransform: 'uppercase',
   },
   top: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem', gap: '0.4rem' },
-  title: { fontSize: '0.85rem', fontWeight: '600', color: '#F1F5F9', lineHeight: '1.4', flex: 1, margin: 0 },
+  title: { fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)', lineHeight: '1.4', flex: 1, margin: 0 },
   deleteBtn: {
-    background: 'none', border: 'none', color: '#475569',
-    fontSize: '1rem', padding: '0.05rem 0.25rem', borderRadius: '4px', flexShrink: 0, cursor: 'pointer', lineHeight: 1,
+    background: 'none', border: 'none', color: 'var(--text-muted)',
+    display: 'flex', padding: '0.05rem 0.25rem', borderRadius: '4px', flexShrink: 0, cursor: 'pointer', lineHeight: 1,
   },
   description: {
-    fontSize: '0.75rem', color: '#94A3B8', marginBottom: '0.5rem', lineHeight: '1.4',
+    fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', lineHeight: '1.4',
     display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: '0 0 0.5rem',
   },
   bottom: { display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', marginTop: '0.55rem' },
@@ -102,10 +106,10 @@ const s = {
   },
   dueDate:  { fontSize: '0.7rem' },
   rightBadges: { display: 'flex', alignItems: 'center', gap: '0.35rem', marginLeft: 'auto' },
-  comments: { fontSize: '0.68rem', color: '#475569' },
+  comments: { fontSize: '0.68rem', color: 'var(--text-muted)' },
   avatar: {
     width: '20px', height: '20px', borderRadius: '50%',
-    background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', color: '#fff',
+    background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))', color: '#fff',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: '0.6rem', fontWeight: '700', flexShrink: 0,
   },

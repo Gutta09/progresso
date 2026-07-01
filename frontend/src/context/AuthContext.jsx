@@ -30,6 +30,15 @@ export const AuthProvider = ({ children }) => {
     setUser(userData)
   }
 
+  const refreshUser = async () => {
+    try {
+      const res = await getMe()
+      setUser(res.data)
+    } catch {
+      // ignore — caller can decide how to handle a failed refresh
+    }
+  }
+
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('workspace')
@@ -43,7 +52,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, workspace, switchWorkspace }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser, workspace, switchWorkspace }}>
       {children}
     </AuthContext.Provider>
   )

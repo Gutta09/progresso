@@ -8,6 +8,7 @@ from database import get_db
 import models
 import bcrypt
 import os
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,6 +16,13 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+
+_PLACEHOLDER_SECRET = "your_super_secret_key_change_this_in_production"
+if not SECRET_KEY or SECRET_KEY == _PLACEHOLDER_SECRET:
+    raise RuntimeError(
+        "SECRET_KEY is missing or still set to the insecure placeholder value. "
+        "Set a real random SECRET_KEY in backend/.env before starting the server."
+    )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
@@ -24,6 +32,16 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+
+def validate_password_strength(password: str):
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+    if not re.search(r"[A-Z]", password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter")
+    if not re.search(r"[a-z]", password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one lowercase letter")
+    if not re.search(r"\d", password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one number")
 
 # ─── JWT Token ──────────────────────────────────────
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):

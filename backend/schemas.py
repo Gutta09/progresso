@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 
 class RoleEnum(str, Enum):
@@ -74,7 +74,7 @@ class CommentCreate(BaseModel):
 class CommentResponse(BaseModel):
     comment_id: int
     text_content: str
-    timestamp: str
+    timestamp: datetime
     task_id: int
     user_id: int
 

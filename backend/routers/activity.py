@@ -4,6 +4,7 @@ from database import get_db
 from auth import get_current_user
 from models import ActivityLog, User, Board
 from datetime import datetime
+from permissions import check_board_access
 
 router = APIRouter(prefix="/activity", tags=["activity"])
 
@@ -86,6 +87,9 @@ def get_board_activity(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    board = db.query(Board).filter(Board.board_id == board_id).first()
+    check_board_access(board, current_user)
+
     logs = (
         db.query(ActivityLog)
         .filter(ActivityLog.board_id == board_id)

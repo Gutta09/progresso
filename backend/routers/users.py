@@ -1,30 +1,34 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from database import get_db
 import models
 import schemas
 import auth
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import get_db
-from auth import get_current_user, hash_password, verify_password
-from models import User
-from schemas import UserUpdate, UserOut  # add these to schemas.py
-import re
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
-@router.put("/me", response_model=UserOut)
-def update_profile(data: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.put("/me", response_model=schemas.UserOut)
+def update_profile(
+    data: schemas.UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
     if data.username:
-        existing = db.query(User).filter(User.username == data.username, User.user_id != current_user.user_id).first()
+        existing = db.query(models.User).filter(
+            models.User.username == data.username, models.User.user_id != current_user.user_id
+        ).first()
         if existing:
             raise HTTPException(status_code=400, detail="Username already taken")
         current_user.username = data.username
 
     if data.email:
-        existing = db.query(User).filter(User.email == data.email, User.user_id != current_user.user_id).first()
+        existing = db.query(models.User).filter(
+            models.User.email == data.email, models.User.user_id != current_user.user_id
+        ).first()
         if existing:
             raise HTTPException(status_code=400, detail="Email already in use")
         current_user.email = data.email
@@ -32,9 +36,10 @@ def update_profile(data: UserUpdate, db: Session = Depends(get_db), current_user
     if data.new_password:
         if not data.current_password:
             raise HTTPException(status_code=400, detail="Current password required")
-        if not verify_password(data.current_password, current_user.password_hash):
+        if not auth.verify_password(data.current_password, current_user.password_hash):
             raise HTTPException(status_code=400, detail="Current password is incorrect")
-        current_user.password_hash = hash_password(data.new_password)
+        auth.validate_password_strength(data.new_password)
+        current_user.password_hash = auth.hash_password(data.new_password)
 
     db.commit()
     db.refresh(current_user)
@@ -42,7 +47,8 @@ def update_profile(data: UserUpdate, db: Session = Depends(get_db), current_user
 
 # ─── Register ───────────────────────────────────────
 @router.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def register(request: Request, user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing_email = db.query(models.User).filter(models.User.email == user.email).first()
     if existing_email:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -50,6 +56,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing_username = db.query(models.User).filter(models.User.username == user.username).first()
     if existing_username:
         raise HTTPException(status_code=400, detail="Username already taken")
+
+    auth.validate_password_strength(user.password)
 
     new_user = models.User(
         username=user.username,
@@ -64,7 +72,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 # ─── Login ──────────────────────────────────────────
 @router.post("/login", response_model=schemas.Token)
-def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == credentials.email).first()
     if not user or not auth.verify_password(credentials.password, user.password_hash):
         raise HTTPException(

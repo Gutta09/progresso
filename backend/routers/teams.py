@@ -4,13 +4,13 @@ from database import get_db
 import models
 import schemas
 import auth
-import random
+import secrets
 import string
 
 router = APIRouter()
 
 def generate_invite_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
 
 @router.post("/create", response_model=schemas.TeamResponse, status_code=status.HTTP_201_CREATED)
 def create_team(

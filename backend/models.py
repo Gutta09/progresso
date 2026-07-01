@@ -104,7 +104,7 @@ class Comment(Base):
 
     comment_id = Column(Integer, primary_key=True, index=True)
     text_content = Column(String, nullable=False)
-    timestamp = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
     task_id = Column(Integer, ForeignKey("tasks.task_id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 

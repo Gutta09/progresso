@@ -6,6 +6,7 @@ import schemas
 import auth
 from datetime import date
 from activity_helper import log_event
+from permissions import check_board_access
 
 router = APIRouter()
 
@@ -84,10 +85,7 @@ def get_board(
     db: Session = Depends(get_db)
 ):
     board = db.query(models.Board).filter(models.Board.board_id == board_id).first()
-    if not board:
-        raise HTTPException(status_code=404, detail="Board not found")
-    if board.team_id and board.team_id != current_user.team_id:
-        raise HTTPException(status_code=403, detail="Not authorized to view this board")
+    check_board_access(board, current_user)
     return board
 
 @router.delete("/{board_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -97,12 +95,9 @@ def delete_board(
     db: Session = Depends(get_db)
 ):
     board = db.query(models.Board).filter(models.Board.board_id == board_id).first()
-    if not board:
-        raise HTTPException(status_code=404, detail="Board not found")
+    check_board_access(board, current_user)
     if board.team_id:
         require_admin(current_user)
-    elif board.owner_id != current_user.user_id:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this board")
     db.delete(board)
     db.commit()
 
@@ -113,8 +108,7 @@ def create_column(
     db: Session = Depends(get_db)
 ):
     board = db.query(models.Board).filter(models.Board.board_id == column.board_id).first()
-    if not board:
-        raise HTTPException(status_code=404, detail="Board not found")
+    check_board_access(board, current_user)
     if board.team_id:
         require_admin(current_user)
 
@@ -147,7 +141,8 @@ def delete_column(
     board = db.query(models.Board).filter(
         models.Board.board_id == column.board_id
     ).first()
-    if board and board.team_id:
+    check_board_access(board, current_user)
+    if board.team_id:
         require_admin(current_user)
 
     log_event(db, column.board_id, current_user.user_id, "column_deleted",

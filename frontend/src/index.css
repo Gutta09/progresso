@@ -1,6 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   18px;
+}
+
+[data-theme="dark"] {
   --bg-base:     #0F172A;
   --bg-surface:  #1E293B;
   --bg-raised:   #263348;
@@ -10,6 +17,7 @@
   --text-primary: #F1F5F9;
   --text-secondary:#94A3B8;
   --text-muted:  #64748B;
+  --text-inverse:#0F172A;
 
   --accent:      #3B82F6;
   --accent-hover:#2563EB;
@@ -23,14 +31,54 @@
   --danger:      #EF4444;
   --danger-soft: rgba(239,68,68,0.12);
 
-  --radius-sm:   6px;
-  --radius-md:   10px;
-  --radius-lg:   14px;
-  --radius-xl:   18px;
+  --priority-low:#10B981;    --priority-low-soft:rgba(16,185,129,0.1);   --priority-low-border:rgba(16,185,129,0.25);
+  --priority-medium:#F59E0B; --priority-medium-soft:rgba(245,158,11,0.1);--priority-medium-border:rgba(245,158,11,0.25);
+  --priority-high:#EF4444;   --priority-high-soft:rgba(239,68,68,0.1);   --priority-high-border:rgba(239,68,68,0.25);
+
+  --avatar-grad-start:#3B82F6;
+  --avatar-grad-end:  #1D4ED8;
+  --overlay: rgba(0,0,0,0.65);
 
   --shadow-sm:   0 1px 3px rgba(0,0,0,0.3);
   --shadow-md:   0 4px 16px rgba(0,0,0,0.4);
   --shadow-lg:   0 16px 48px rgba(0,0,0,0.5);
+}
+
+[data-theme="light"] {
+  --bg-base:     #F8FAFC;
+  --bg-surface:  #FFFFFF;
+  --bg-raised:   #F1F5F9;
+  --border:      #E2E8F0;
+  --border-light:#CBD5E1;
+
+  --text-primary: #0F172A;
+  --text-secondary:#475569;
+  --text-muted:  #64748B;
+  --text-inverse:#F8FAFC;
+
+  --accent:      #2563EB;
+  --accent-hover:#1D4ED8;
+  --accent-soft: rgba(37,99,235,0.08);
+  --accent-border:rgba(37,99,235,0.25);
+
+  --success:     #059669;
+  --success-soft:rgba(5,150,105,0.08);
+  --warning:     #D97706;
+  --warning-soft:rgba(217,119,6,0.08);
+  --danger:      #DC2626;
+  --danger-soft: rgba(220,38,38,0.08);
+
+  --priority-low:#059669;    --priority-low-soft:rgba(5,150,105,0.08);   --priority-low-border:rgba(5,150,105,0.25);
+  --priority-medium:#D97706; --priority-medium-soft:rgba(217,119,6,0.08);--priority-medium-border:rgba(217,119,6,0.25);
+  --priority-high:#DC2626;   --priority-high-soft:rgba(220,38,38,0.08);  --priority-high-border:rgba(220,38,38,0.25);
+
+  --avatar-grad-start:#2563EB;
+  --avatar-grad-end:  #1D4ED8;
+  --overlay: rgba(15,23,42,0.45);
+
+  --shadow-sm:   0 1px 3px rgba(15,23,42,0.06);
+  --shadow-md:   0 4px 16px rgba(15,23,42,0.08);
+  --shadow-lg:   0 16px 48px rgba(15,23,42,0.12);
 }
 
 *, *::before, *::after {

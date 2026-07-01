@@ -17,7 +17,6 @@ const Board = () => {
   const [error, setError] = useState('')
   const [selectedTask, setSelectedTask] = useState(null)
   const [showModal, setShowModal] = useState(false)
-  const [activeColumn, setActiveColumn] = useState(null)
   const [draggedTask, setDraggedTask] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
   const [teamMembers, setTeamMembers] = useState([])
@@ -27,7 +26,15 @@ const Board = () => {
   useEffect(() => { fetchBoard(); fetchTeamMembers() }, [id])
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
-  const fetchTeamMembers = async () => { try { const r = await getTeamMembers(); setTeamMembers(r.data) } catch {} }
+
+  const fetchTeamMembers = async () => {
+    try {
+      const r = await getTeamMembers()
+      setTeamMembers(r.data)
+    } catch (err) {
+      if (err.response?.status !== 404) console.error('Failed to fetch team members:', err)
+    }
+  }
 
   const fetchBoard = async () => {
     try { const r = await getBoard(id); setBoard(r.data) }
@@ -141,7 +148,7 @@ const Column = ({ column, accent, onDragStart, onDragOver, onDrop, onCreateTask,
     <div
       style={{
         ...s.column,
-        borderColor: isDragOver ? accent : '#334155',
+        borderColor: isDragOver ? accent : 'var(--border)',
         boxShadow: isDragOver ? `0 0 0 2px ${accent}40` : 'none',
       }}
       onDragOver={(e) => onDragOver(e, column.column_id)}
@@ -192,23 +199,23 @@ const Column = ({ column, accent, onDragStart, onDragOver, onDrop, onCreateTask,
 }
 
 const s = {
-  page: { minHeight: '100vh', backgroundColor: '#0F172A' },
+  page: { minHeight: '100vh', backgroundColor: 'var(--bg-base)' },
   container: { padding: '1.75rem', overflowX: 'auto' },
   boardHeader: {
     display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
     marginBottom: '1.75rem', gap: '1rem',
   },
   boardHeaderLeft: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  boardTitle: { fontSize: '1.5rem', fontWeight: '700', color: '#F1F5F9', margin: 0, letterSpacing: '-0.02em' },
+  boardTitle: { fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' },
   boardMeta: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap' },
   metaChip: {
-    fontSize: '0.72rem', color: '#64748B', backgroundColor: '#1E293B',
-    border: '1px solid #334155', borderRadius: '999px', padding: '0.18rem 0.6rem',
+    fontSize: '0.72rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)',
+    border: '1px solid var(--border)', borderRadius: '999px', padding: '0.18rem 0.6rem',
   },
   activityBtn: {
     display: 'flex', alignItems: 'center',
-    padding: '0.45rem 1rem', backgroundColor: 'rgba(59,130,246,0.1)',
-    color: '#93C5FD', border: '1px solid rgba(59,130,246,0.25)',
+    padding: '0.45rem 1rem', backgroundColor: 'var(--accent-soft)',
+    color: 'var(--accent)', border: '1px solid var(--accent-border)',
     borderRadius: '8px', fontSize: '0.82rem', fontWeight: '500', cursor: 'pointer', whiteSpace: 'nowrap',
   },
   columnsWrapper: {
@@ -216,8 +223,8 @@ const s = {
     minWidth: 'max-content', paddingBottom: '1rem',
   },
   column: {
-    backgroundColor: '#1E293B', borderRadius: '12px',
-    width: '285px', minHeight: '200px', border: '1px solid #334155',
+    backgroundColor: 'var(--bg-surface)', borderRadius: '12px',
+    width: '285px', minHeight: '200px', border: '1px solid var(--border)',
     overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s',
   },
   columnAccentBar: { height: '3px', width: '100%' },
@@ -225,20 +232,20 @@ const s = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: '0.85rem 0.9rem 0.4rem',
   },
-  columnName: { fontWeight: '700', fontSize: '0.85rem', color: '#CBD5E1' },
+  columnName: { fontWeight: '700', fontSize: '0.85rem', color: 'var(--text-secondary)' },
   taskCount: { borderRadius: '999px', padding: '0.08rem 0.5rem', fontSize: '0.72rem', fontWeight: '700' },
   taskList: { display: 'flex', flexDirection: 'column', gap: '0.5rem', minHeight: '50px', padding: '0.4rem 0.7rem' },
   addTaskBtn: {
     width: 'calc(100% - 1.4rem)', margin: '0.4rem 0.7rem 0.65rem',
     padding: '0.55rem', backgroundColor: 'transparent',
-    border: '1.5px dashed #334155', borderRadius: '7px',
-    color: '#475569', fontSize: '0.82rem', fontWeight: '500', cursor: 'pointer',
+    border: '1.5px dashed var(--border)', borderRadius: '7px',
+    color: 'var(--text-muted)', fontSize: '0.82rem', fontWeight: '500', cursor: 'pointer',
   },
   addForm: { padding: '0.4rem 0.7rem 0.65rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' },
   addInput: {
     padding: '0.55rem 0.7rem', borderRadius: '7px', border: '1.5px solid',
-    fontSize: '0.85rem', outline: 'none', backgroundColor: '#263348',
-    color: '#F1F5F9', width: '100%', boxSizing: 'border-box',
+    fontSize: '0.85rem', outline: 'none', backgroundColor: 'var(--bg-raised)',
+    color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box',
   },
   addActions: { display: 'flex', gap: '0.4rem' },
   addConfirmBtn: {
@@ -247,15 +254,15 @@ const s = {
   },
   addCancelBtn: {
     flex: 1, padding: '0.45rem', backgroundColor: 'transparent',
-    color: '#94A3B8', border: '1px solid #334155', borderRadius: '7px',
+    color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: '7px',
     fontSize: '0.82rem', cursor: 'pointer',
   },
-  message: { padding: '3rem', textAlign: 'center', color: '#64748B' },
+  message: { padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' },
   toast: {
     position: 'fixed', bottom: '1.75rem', left: '50%', transform: 'translateX(-50%)',
-    backgroundColor: '#1E293B', color: '#F1F5F9', padding: '0.7rem 1.4rem',
+    backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)', padding: '0.7rem 1.4rem',
     borderRadius: '9px', fontSize: '0.875rem', fontWeight: '500', zIndex: 999,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.4)', border: '1px solid #334155',
+    boxShadow: 'var(--shadow-md)', border: '1px solid var(--border)',
   },
 }
 

@@ -4,6 +4,14 @@ import { registerUser, loginUser, getMe } from '../api'
 import { useAuth } from '../context/AuthContext'
 import axios from 'axios'
 
+function validatePasswordStrength(password) {
+  if (password.length < 8) return 'Password must be at least 8 characters long.'
+  if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter.'
+  if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter.'
+  if (!/\d/.test(password)) return 'Password must contain at least one number.'
+  return null
+}
+
 const Signup = () => {
   const navigate = useNavigate()
   const { login } = useAuth()
@@ -22,7 +30,8 @@ const Signup = () => {
     e.preventDefault()
     setError('')
     if (formData.password !== formData.confirmPassword) return setError('Passwords do not match.')
-    if (formData.password.length < 6) return setError('Password must be at least 6 characters.')
+    const strengthError = validatePasswordStrength(formData.password)
+    if (strengthError) return setError(strengthError)
     setStep(2)
   }
 
@@ -60,7 +69,7 @@ const Signup = () => {
       <div style={s.container}>
         <div style={s.card}>
           <div style={s.successIconWrap}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
           </div>
@@ -70,7 +79,7 @@ const Signup = () => {
             <span style={s.inviteCode}>{createdTeam.invite_code}</span>
           </div>
           <p style={s.inviteHint}>
-            Members can enter this code during sign-up to join <strong style={{ color: '#93C5FD' }}>{createdTeam.team_name}</strong>
+            Members can enter this code during sign-up to join <strong style={{ color: 'var(--accent)' }}>{createdTeam.team_name}</strong>
           </p>
           <button style={s.button} onClick={() => navigate('/dashboard')}>Go to Dashboard</button>
         </div>
@@ -91,8 +100,8 @@ const Signup = () => {
         <div style={s.stepIndicator}>
           {[1, 2].map(n => (
             <div key={n} style={s.stepRow}>
-              <div style={{ ...s.stepDot, backgroundColor: step >= n ? '#3B82F6' : '#334155' }} />
-              {n < 2 && <div style={{ ...s.stepLine, backgroundColor: step > n ? '#3B82F6' : '#334155' }} />}
+              <div style={{ ...s.stepDot, backgroundColor: step >= n ? 'var(--accent)' : 'var(--border)' }} />
+              {n < 2 && <div style={{ ...s.stepLine, backgroundColor: step > n ? 'var(--accent)' : 'var(--border)' }} />}
             </div>
           ))}
         </div>
@@ -114,7 +123,7 @@ const Signup = () => {
               <div style={s.twoCol}>
                 <div style={s.field}>
                   <label style={s.label}>Password</label>
-                  <input style={s.input} type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Min. 6 characters" required />
+                  <input style={s.input} type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Min. 8 chars, upper + lower + number" required />
                 </div>
                 <div style={s.field}>
                   <label style={s.label}>Confirm Password</label>
@@ -188,74 +197,74 @@ const Signup = () => {
 const s = {
   container: {
     minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#0F172A', padding: '1rem',
+    backgroundColor: 'var(--bg-base)', padding: '1rem',
   },
   card: {
-    backgroundColor: '#1E293B', padding: '2.25rem', borderRadius: '14px',
-    border: '1px solid #334155', boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+    backgroundColor: 'var(--bg-surface)', padding: '2.25rem', borderRadius: '14px',
+    border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)',
     width: '100%', maxWidth: '460px',
   },
   logoWrapper: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.65rem', marginBottom: '0.65rem' },
   logoIcon: {
     width: '34px', height: '34px', borderRadius: '9px',
-    background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)',
+    background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#fff', fontWeight: '800', fontSize: '1rem',
   },
-  logo: { fontSize: '1.6rem', fontWeight: '800', color: '#F1F5F9', letterSpacing: '-0.02em', margin: 0 },
+  logo: { fontSize: '1.6rem', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 },
   stepIndicator: { display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.1rem' },
   stepRow: { display: 'flex', alignItems: 'center' },
   stepDot: { width: '9px', height: '9px', borderRadius: '50%', transition: 'background 0.3s' },
   stepLine: { width: '36px', height: '2px', transition: 'background 0.3s' },
-  subtitle: { textAlign: 'center', color: '#64748B', marginBottom: '1.6rem', fontSize: '0.875rem' },
+  subtitle: { textAlign: 'center', color: 'var(--text-muted)', marginBottom: '1.6rem', fontSize: '0.875rem' },
   error: {
-    backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
-    color: '#FCA5A5', padding: '0.65rem 0.9rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.82rem',
+    backgroundColor: 'var(--danger-soft)', border: '1px solid var(--priority-high-border)',
+    color: 'var(--danger)', padding: '0.65rem 0.9rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.82rem',
   },
   form: { display: 'flex', flexDirection: 'column', gap: '0.2rem' },
   twoCol: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' },
   field: { display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.65rem' },
-  label: { fontSize: '0.78rem', fontWeight: '600', color: '#94A3B8', letterSpacing: '0.03em' },
+  label: { fontSize: '0.78rem', fontWeight: '600', color: 'var(--text-secondary)', letterSpacing: '0.03em' },
   input: {
-    padding: '0.75rem 0.9rem', borderRadius: '9px', border: '1.5px solid #334155',
+    padding: '0.75rem 0.9rem', borderRadius: '9px', border: '1.5px solid var(--border)',
     fontSize: '0.9rem', outline: 'none', width: '100%',
-    backgroundColor: '#263348', color: '#F1F5F9', transition: 'border-color 0.2s', boxSizing: 'border-box',
+    backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)', transition: 'border-color 0.2s', boxSizing: 'border-box',
   },
   button: {
     width: '100%', padding: '0.85rem',
-    background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', color: '#fff',
+    background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))', color: '#fff',
     border: 'none', borderRadius: '9px', fontSize: '0.9rem', fontWeight: '600',
     marginTop: '0.5rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
   },
-  footer: { textAlign: 'center', marginTop: '1.4rem', fontSize: '0.85rem', color: '#64748B' },
-  link: { color: '#93C5FD', fontWeight: '600' },
+  footer: { textAlign: 'center', marginTop: '1.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' },
+  link: { color: 'var(--accent)', fontWeight: '600' },
   choiceGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', marginBottom: '1.25rem' },
   choiceCard: {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem',
-    padding: '0.9rem 0.4rem', borderRadius: '10px', border: '1.5px solid #334155',
-    cursor: 'pointer', backgroundColor: '#263348', transition: 'all 0.15s',
+    padding: '0.9rem 0.4rem', borderRadius: '10px', border: '1.5px solid var(--border)',
+    cursor: 'pointer', backgroundColor: 'var(--bg-raised)', transition: 'all 0.15s',
   },
-  choiceCardActive: { border: '1.5px solid #3B82F6', backgroundColor: 'rgba(59,130,246,0.1)' },
-  choiceTitle: { fontSize: '0.75rem', fontWeight: '700', color: '#F1F5F9', textAlign: 'center' },
-  choiceDesc:  { fontSize: '0.67rem', color: '#64748B', textAlign: 'center' },
+  choiceCardActive: { border: '1.5px solid var(--accent)', backgroundColor: 'var(--accent-soft)' },
+  choiceTitle: { fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-primary)', textAlign: 'center' },
+  choiceDesc:  { fontSize: '0.67rem', color: 'var(--text-muted)', textAlign: 'center' },
   stepButtons: { display: 'flex', gap: '0.6rem', marginTop: '0.5rem' },
   backBtn: {
-    padding: '0.85rem 1.1rem', backgroundColor: 'transparent', color: '#94A3B8',
-    border: '1.5px solid #334155', borderRadius: '9px', fontSize: '0.875rem', fontWeight: '500', cursor: 'pointer',
+    padding: '0.85rem 1.1rem', backgroundColor: 'transparent', color: 'var(--text-secondary)',
+    border: '1.5px solid var(--border)', borderRadius: '9px', fontSize: '0.875rem', fontWeight: '500', cursor: 'pointer',
   },
   successIconWrap: {
     width: '60px', height: '60px', borderRadius: '50%',
-    backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
+    backgroundColor: 'var(--success-soft)', border: '1px solid var(--priority-low-border)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem',
   },
-  successTitle: { fontSize: '1.3rem', fontWeight: '700', color: '#F1F5F9', textAlign: 'center', marginBottom: '0.4rem' },
-  successSubtitle: { textAlign: 'center', color: '#64748B', fontSize: '0.875rem', marginBottom: '1.4rem' },
+  successTitle: { fontSize: '1.3rem', fontWeight: '700', color: 'var(--text-primary)', textAlign: 'center', marginBottom: '0.4rem' },
+  successSubtitle: { textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.4rem' },
   inviteBox: {
-    background: 'rgba(59,130,246,0.08)', border: '1.5px dashed rgba(59,130,246,0.35)',
+    background: 'var(--accent-soft)', border: '1.5px dashed var(--accent-border)',
     borderRadius: '10px', padding: '1.25rem', textAlign: 'center', marginBottom: '0.85rem',
   },
-  inviteCode: { fontSize: '1.9rem', fontWeight: '800', color: '#93C5FD', letterSpacing: '0.3em' },
-  inviteHint: { textAlign: 'center', fontSize: '0.82rem', color: '#64748B', marginBottom: '1.5rem' },
+  inviteCode: { fontSize: '1.9rem', fontWeight: '800', color: 'var(--accent)', letterSpacing: '0.3em' },
+  inviteHint: { textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.5rem' },
 }
 
 export default Signup

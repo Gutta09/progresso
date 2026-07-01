@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from database import get_db
 import models
 import schemas
 import auth
 from datetime import datetime
 from activity_helper import log_event
+from permissions import check_board_access
 
 router = APIRouter()
 
@@ -29,12 +30,12 @@ def create_task(
     board = db.query(models.Board).filter(
         models.Board.board_id == column.board_id
     ).first()
-    if board and board.team_id:
-        if current_user.role != models.RoleEnum.admin:
-            raise HTTPException(
-                status_code=403,
-                detail="Only team admins can create tasks on team boards"
-            )
+    check_board_access(board, current_user)
+    if board.team_id and current_user.role != models.RoleEnum.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only team admins can create tasks on team boards"
+        )
 
     new_task = models.Task(
         title=task.title.strip(),
@@ -59,18 +60,21 @@ def get_my_tasks(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    tasks = db.query(models.Task).filter(
-        models.Task.assigned_to == current_user.user_id
-    ).all()
+    tasks = (
+        db.query(models.Task)
+        .options(
+            joinedload(models.Task.column).joinedload(models.BoardColumn.board),
+            joinedload(models.Task.labels),
+            joinedload(models.Task.comments),
+        )
+        .filter(models.Task.assigned_to == current_user.user_id)
+        .all()
+    )
 
     result = []
     for task in tasks:
-        col = db.query(models.BoardColumn).filter(
-            models.BoardColumn.column_id == task.column_id
-        ).first()
-        board = db.query(models.Board).filter(
-            models.Board.board_id == col.board_id
-        ).first() if col else None
+        col = task.column
+        board = col.board if col else None
 
         result.append({
             "task_id": task.task_id,
@@ -98,6 +102,11 @@ def get_task(
     task = db.query(models.Task).filter(models.Task.task_id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    column = db.query(models.BoardColumn).filter(models.BoardColumn.column_id == task.column_id).first()
+    board = db.query(models.Board).filter(models.Board.board_id == column.board_id).first() if column else None
+    check_board_access(board, current_user)
+
     return task
 
 # ─── Update Task ────────────────────────────────────
@@ -111,6 +120,10 @@ def update_task(
     task = db.query(models.Task).filter(models.Task.task_id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    column = db.query(models.BoardColumn).filter(models.BoardColumn.column_id == task.column_id).first()
+    board = db.query(models.Board).filter(models.Board.board_id == column.board_id).first() if column else None
+    check_board_access(board, current_user)
 
     if updates.title is not None:
         if not updates.title.strip():
@@ -150,8 +163,9 @@ def move_task(
     board = db.query(models.Board).filter(
         models.Board.board_id == new_col.board_id
     ).first()
+    check_board_access(board, current_user)
 
-    if board and board.team_id:
+    if board.team_id:
         is_admin = current_user.role == models.RoleEnum.admin
         is_assigned = task.assigned_to == current_user.user_id
         if not is_admin and not is_assigned:
@@ -188,12 +202,12 @@ def delete_task(
     board = db.query(models.Board).filter(
         models.Board.board_id == col.board_id
     ).first() if col else None
-    if board and board.team_id:
-        if current_user.role != models.RoleEnum.admin:
-            raise HTTPException(
-                status_code=403,
-                detail="Only team admins can delete tasks on team boards"
-            )
+    check_board_access(board, current_user)
+    if board.team_id and current_user.role != models.RoleEnum.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only team admins can delete tasks on team boards"
+        )
 
     title = task.title
     board_id = col.board_id if col else None
@@ -217,9 +231,13 @@ def add_comment(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
+    column = db.query(models.BoardColumn).filter(models.BoardColumn.column_id == task.column_id).first()
+    board = db.query(models.Board).filter(models.Board.board_id == column.board_id).first() if column else None
+    check_board_access(board, current_user)
+
     new_comment = models.Comment(
         text_content=comment.text_content,
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.utcnow(),
         task_id=task_id,
         user_id=current_user.user_id
     )

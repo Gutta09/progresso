@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { updateTask, addComment, deleteComment, getTeamMembers } from '../api'
 import { useAuth } from '../context/AuthContext'
+import { IconClose } from './icons'
 
 const priorityOptions = ['low', 'medium', 'high']
 const priorityColors  = {
-  low:    { bg: 'rgba(16,185,129,0.1)',  text: '#34D399', border: 'rgba(16,185,129,0.25)' },
-  medium: { bg: 'rgba(245,158,11,0.1)',  text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
-  high:   { bg: 'rgba(239,68,68,0.1)',   text: '#F87171', border: 'rgba(239,68,68,0.25)' },
+  low:    { bg: 'var(--priority-low-soft)',    text: 'var(--priority-low)',    border: 'var(--priority-low-border)' },
+  medium: { bg: 'var(--priority-medium-soft)', text: 'var(--priority-medium)', border: 'var(--priority-medium-border)' },
+  high:   { bg: 'var(--priority-high-soft)',   text: 'var(--priority-high)',   border: 'var(--priority-high-border)' },
 }
 
 const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
@@ -24,7 +25,14 @@ const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
 
   useEffect(() => { if (isTeamBoard) fetchTeamMembers() }, [isTeamBoard])
 
-  const fetchTeamMembers = async () => { try { const r = await getTeamMembers(); setTeamMembers(r.data) } catch {} }
+  const fetchTeamMembers = async () => {
+    try {
+      const r = await getTeamMembers()
+      setTeamMembers(r.data)
+    } catch (err) {
+      if (err.response?.status !== 404) console.error('Failed to fetch team members:', err)
+    }
+  }
 
   const handleSave = async () => {
     if (!title.trim()) { setError('Title cannot be empty'); return }
@@ -72,7 +80,7 @@ const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
             <div style={{ ...s.priorityDot, backgroundColor: pc.text }} />
             <h3 style={s.modalTitle}>Task Details</h3>
           </div>
-          <button style={s.closeBtn} onClick={onClose}>&times;</button>
+          <button style={s.closeBtn} onClick={onClose}><IconClose size={17} /></button>
         </div>
 
         {error && <div style={s.error}>{error}</div>}
@@ -98,7 +106,7 @@ const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
               value={priority} onChange={e => setPriority(e.target.value)} disabled={!canEdit}
             >
               {priorityOptions.map(p => (
-                <option key={p} value={p} style={{ backgroundColor: '#263348', color: '#F1F5F9' }}>
+                <option key={p} value={p} style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)' }}>
                   {p.charAt(0).toUpperCase() + p.slice(1)}
                 </option>
               ))}
@@ -116,9 +124,9 @@ const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
             <label style={s.label}>Assigned To</label>
             {isAdmin ? (
               <select style={s.select} value={assignedTo} onChange={e => setAssignedTo(e.target.value)}>
-                <option value="" style={{ backgroundColor: '#263348' }}>Unassigned</option>
+                <option value="" style={{ backgroundColor: 'var(--bg-raised)' }}>Unassigned</option>
                 {teamMembers.map(m => (
-                  <option key={m.user_id} value={m.user_id} style={{ backgroundColor: '#263348', color: '#F1F5F9' }}>
+                  <option key={m.user_id} value={m.user_id} style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)' }}>
                     {m.username}{m.user_id === user?.user_id ? ' (you)' : ''}
                   </option>
                 ))}
@@ -165,7 +173,7 @@ const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
                     <span style={s.commentTime}>{new Date(c.timestamp).toLocaleString()}</span>
                   </div>
                   {c.user_id === user?.user_id && (
-                    <button style={s.deleteCommentBtn} onClick={() => handleDeleteComment(c.comment_id)}>&times;</button>
+                    <button style={s.deleteCommentBtn} onClick={() => handleDeleteComment(c.comment_id)}><IconClose size={13} /></button>
                   )}
                 </div>
                 <p style={s.commentText}>{c.text_content}</p>
@@ -193,81 +201,81 @@ const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
 
 const s = {
   overlay: {
-    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)',
+    position: 'fixed', inset: 0, backgroundColor: 'var(--overlay)',
     backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center',
     justifyContent: 'center', zIndex: 200, padding: '1rem',
   },
   modal: {
-    backgroundColor: '#1E293B', borderRadius: '14px', padding: '1.6rem',
+    backgroundColor: 'var(--bg-surface)', borderRadius: '14px', padding: '1.6rem',
     width: '100%', maxWidth: '510px', maxHeight: '90vh', overflowY: 'auto',
-    boxShadow: '0 24px 80px rgba(0,0,0,0.6)', border: '1px solid #334155',
+    boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
   },
   modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' },
   modalHeaderLeft: { display: 'flex', alignItems: 'center', gap: '0.55rem' },
   priorityDot: { width: '9px', height: '9px', borderRadius: '50%', flexShrink: 0 },
-  modalTitle: { fontSize: '0.95rem', fontWeight: '700', color: '#F1F5F9', margin: 0 },
-  closeBtn: { background: 'none', border: 'none', fontSize: '1.3rem', color: '#64748B', cursor: 'pointer', lineHeight: 1 },
+  modalTitle: { fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 },
+  closeBtn: { background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', lineHeight: 1 },
   error: {
-    backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
-    color: '#FCA5A5', padding: '0.6rem 0.85rem', borderRadius: '7px', marginBottom: '1rem', fontSize: '0.82rem',
+    backgroundColor: 'var(--danger-soft)', border: '1px solid var(--priority-high-border)',
+    color: 'var(--danger)', padding: '0.6rem 0.85rem', borderRadius: '7px', marginBottom: '1rem', fontSize: '0.82rem',
   },
   field: { display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.9rem' },
-  label: { fontSize: '0.72rem', fontWeight: '600', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  label: { fontSize: '0.72rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' },
   input: {
-    padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1.5px solid #334155',
+    padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1.5px solid var(--border)',
     fontSize: '0.875rem', outline: 'none', width: '100%',
-    backgroundColor: '#263348', color: '#F1F5F9', boxSizing: 'border-box',
+    backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)', boxSizing: 'border-box',
   },
   textarea: {
-    padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1.5px solid #334155',
+    padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1.5px solid var(--border)',
     fontSize: '0.875rem', outline: 'none', resize: 'vertical', fontFamily: 'inherit',
-    width: '100%', backgroundColor: '#263348', color: '#F1F5F9', boxSizing: 'border-box',
+    width: '100%', backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)', boxSizing: 'border-box',
   },
   select: {
-    padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1.5px solid #334155',
-    fontSize: '0.875rem', outline: 'none', width: '100%', backgroundColor: '#263348',
-    color: '#F1F5F9', cursor: 'pointer',
+    padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1.5px solid var(--border)',
+    fontSize: '0.875rem', outline: 'none', width: '100%', backgroundColor: 'var(--bg-raised)',
+    color: 'var(--text-primary)', cursor: 'pointer',
   },
   assigneeDisplay: {
-    padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1.5px solid #334155',
-    fontSize: '0.875rem', color: '#94A3B8', backgroundColor: '#263348',
+    padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1.5px solid var(--border)',
+    fontSize: '0.875rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-raised)',
   },
   row: { display: 'flex', gap: '0.85rem' },
   saveBtn: {
     width: '100%', padding: '0.75rem',
-    background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', color: '#fff',
+    background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))', color: '#fff',
     border: 'none', borderRadius: '9px', fontSize: '0.875rem',
     fontWeight: '600', marginBottom: '1.25rem', cursor: 'pointer',
   },
-  divider: { height: '1px', backgroundColor: '#334155', marginBottom: '1.25rem' },
+  divider: { height: '1px', backgroundColor: 'var(--border)', marginBottom: '1.25rem' },
   commentsSection: { display: 'flex', flexDirection: 'column', gap: '0.85rem' },
   commentsTitle: {
-    fontSize: '0.875rem', fontWeight: '700', color: '#F1F5F9',
+    fontSize: '0.875rem', fontWeight: '700', color: 'var(--text-primary)',
     display: 'flex', alignItems: 'center', gap: '0.45rem', margin: 0,
   },
   commentCount: {
-    backgroundColor: 'rgba(59,130,246,0.1)', color: '#93C5FD',
-    border: '1px solid rgba(59,130,246,0.25)', borderRadius: '999px',
+    backgroundColor: 'var(--accent-soft)', color: 'var(--accent)',
+    border: '1px solid var(--accent-border)', borderRadius: '999px',
     padding: '0.08rem 0.45rem', fontSize: '0.72rem', fontWeight: '700',
   },
   commentsList: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
-  noComments: { fontSize: '0.82rem', color: '#475569', textAlign: 'center', padding: '0.75rem 0' },
-  commentItem: { backgroundColor: '#263348', borderRadius: '9px', padding: '0.8rem', border: '1px solid #334155' },
+  noComments: { fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0.75rem 0' },
+  commentItem: { backgroundColor: 'var(--bg-raised)', borderRadius: '9px', padding: '0.8rem', border: '1px solid var(--border)' },
   commentTop: { display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.45rem' },
   commentAvatar: {
     width: '24px', height: '24px', borderRadius: '50%',
-    background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', color: '#fff',
+    background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))', color: '#fff',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: '0.68rem', fontWeight: '700', flexShrink: 0,
   },
   commentMeta: { display: 'flex', flexDirection: 'column', flex: 1 },
-  commentUser: { fontSize: '0.78rem', fontWeight: '600', color: '#93C5FD' },
-  commentTime: { fontSize: '0.68rem', color: '#475569' },
-  deleteCommentBtn: { background: 'none', border: 'none', color: '#475569', fontSize: '1rem', cursor: 'pointer', padding: '0.1rem' },
-  commentText: { fontSize: '0.82rem', color: '#CBD5E1', lineHeight: '1.5', margin: 0 },
+  commentUser: { fontSize: '0.78rem', fontWeight: '600', color: 'var(--accent)' },
+  commentTime: { fontSize: '0.68rem', color: 'var(--text-muted)' },
+  deleteCommentBtn: { background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: '0.1rem' },
+  commentText: { fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 },
   addComment: { display: 'flex', gap: '0.45rem' },
   commentBtn: {
-    padding: '0.65rem 1.1rem', background: 'linear-gradient(135deg,#3B82F6,#1D4ED8)',
+    padding: '0.65rem 1.1rem', background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))',
     color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.82rem',
     fontWeight: '600', whiteSpace: 'nowrap', cursor: 'pointer',
   },
