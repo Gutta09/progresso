@@ -234,7 +234,7 @@ const s = {
     width: '100%', padding: '0.85rem',
     background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))', color: '#fff',
     border: 'none', borderRadius: '9px', fontSize: '0.9rem', fontWeight: '600',
-    marginTop: '0.5rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
+    marginTop: '0.5rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(79,70,229,0.3)',
   },
   footer: { textAlign: 'center', marginTop: '1.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' },
   link: { color: 'var(--accent)', fontWeight: '600' },

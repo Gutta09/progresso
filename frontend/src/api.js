@@ -76,6 +76,21 @@ export const getUnreadCount = (since) =>
 export const getRecentActivity = () =>
   api.get('/activity/recent').then(r => r.data)
 
+// ─── GitHub Integration ──────────────────────────────
+export const getGithubStatus = () => api.get('/github/status').then(r => r.data)
+export const connectGithub = (data) => api.post('/github/connect', data).then(r => r.data)
+export const disconnectGithub = () => api.delete('/github/disconnect')
+export const getGithubCommits = () => api.get('/github/commits').then(r => r.data)
+export const getGithubIssues = (state = 'open') => api.get(`/github/issues?state=${state}`).then(r => r.data)
+export const getGithubPulls = (state = 'open') => api.get(`/github/pulls?state=${state}`).then(r => r.data)
+export const syncGithub = () => api.post('/github/sync').then(r => r.data)
+export const linkTaskIssue = (taskId, issueNumber) =>
+  api.post(`/github/tasks/${taskId}/link`, { issue_number: issueNumber }).then(r => r.data)
+export const unlinkTaskIssue = (taskId) =>
+  api.delete(`/github/tasks/${taskId}/link`).then(r => r.data)
+export const createIssueFromTask = (taskId, data = {}) =>
+  api.post(`/github/tasks/${taskId}/create-issue`, data).then(r => r.data)
+
 // ─── Admin Report ────────────────────────────────────
 export const getAdminReport = () =>
   api.get('/admin/report').then(r => r.data)

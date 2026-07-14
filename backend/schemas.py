@@ -110,6 +110,9 @@ class TaskResponse(BaseModel):
     assigned_to: Optional[int] = None
     labels: List[LabelResponse] = []
     comments: List[CommentResponse] = []
+    github_issue_number: Optional[int] = None
+    github_issue_url: Optional[str] = None
+    github_issue_state: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -162,6 +165,41 @@ class BoardResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ─── GitHub Integration ─────────────────────────────
+class GitHubConnect(BaseModel):
+    repo: str          # "owner/name" or a full github.com URL
+    token: str         # personal access token (never stored in plaintext)
+
+class GitHubRepoMeta(BaseModel):
+    full_name: Optional[str] = None
+    html_url: Optional[str] = None
+    description: Optional[str] = None
+    private: Optional[bool] = None
+    default_branch: Optional[str] = None
+    stargazers_count: Optional[int] = None
+    open_issues_count: Optional[int] = None
+
+class GitHubStatus(BaseModel):
+    connected: bool
+    repo: Optional[str] = None
+    connected_by: Optional[str] = None
+    connected_at: Optional[datetime] = None
+    webhook_secret: Optional[str] = None      # only exposed to admins
+    meta: Optional[GitHubRepoMeta] = None
+
+class TaskLinkIssue(BaseModel):
+    issue_number: int
+
+class CreateIssueFromTask(BaseModel):
+    title: Optional[str] = None
+    body: Optional[str] = None
+
+class SyncResult(BaseModel):
+    checked: int
+    updated: int
+    details: List[str] = []
+
 
 class UserUpdate(BaseModel):
     username: Optional[str] = None

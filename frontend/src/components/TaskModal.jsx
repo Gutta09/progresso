@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
-import { updateTask, addComment, deleteComment, getTeamMembers } from '../api'
+import {
+  updateTask, addComment, deleteComment, getTeamMembers,
+  getGithubStatus, linkTaskIssue, unlinkTaskIssue, createIssueFromTask,
+} from '../api'
 import { useAuth } from '../context/AuthContext'
 import { IconClose } from './icons'
 
@@ -23,7 +26,20 @@ const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
   const [error, setError]           = useState('')
   const [teamMembers, setTeamMembers] = useState([])
 
-  useEffect(() => { if (isTeamBoard) fetchTeamMembers() }, [isTeamBoard])
+  // ── GitHub linking ──
+  const [ghConnected, setGhConnected] = useState(false)
+  const [ghLink, setGhLink] = useState({
+    number: task.github_issue_number || null,
+    url: task.github_issue_url || null,
+    state: task.github_issue_state || null,
+  })
+  const [issueInput, setIssueInput] = useState('')
+  const [ghBusy, setGhBusy] = useState(false)
+  const [ghError, setGhError] = useState('')
+
+  useEffect(() => {
+    if (isTeamBoard) { fetchTeamMembers(); fetchGithubStatus() }
+  }, [isTeamBoard])
 
   const fetchTeamMembers = async () => {
     try {
@@ -32,6 +48,41 @@ const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
     } catch (err) {
       if (err.response?.status !== 404) console.error('Failed to fetch team members:', err)
     }
+  }
+
+  const fetchGithubStatus = async () => {
+    try {
+      const st = await getGithubStatus()
+      setGhConnected(!!st.connected)
+    } catch { setGhConnected(false) }
+  }
+
+  const applyLink = (t) => {
+    setGhLink({ number: t.github_issue_number, url: t.github_issue_url, state: t.github_issue_state })
+    onRefresh()
+  }
+
+  const handleLinkIssue = async () => {
+    const n = parseInt(issueInput, 10)
+    if (!n) { setGhError('Enter a valid issue number'); return }
+    setGhBusy(true); setGhError('')
+    try { applyLink(await linkTaskIssue(task.task_id, n)); setIssueInput('') }
+    catch (err) { setGhError(err.response?.data?.detail || 'Failed to link issue') }
+    finally { setGhBusy(false) }
+  }
+
+  const handleCreateIssue = async () => {
+    setGhBusy(true); setGhError('')
+    try { applyLink(await createIssueFromTask(task.task_id)) }
+    catch (err) { setGhError(err.response?.data?.detail || 'Failed to create issue') }
+    finally { setGhBusy(false) }
+  }
+
+  const handleUnlink = async () => {
+    setGhBusy(true); setGhError('')
+    try { applyLink(await unlinkTaskIssue(task.task_id)) }
+    catch (err) { setGhError(err.response?.data?.detail || 'Failed to unlink') }
+    finally { setGhBusy(false) }
   }
 
   const handleSave = async () => {
@@ -147,6 +198,42 @@ const TaskModal = ({ task, onClose, onRefresh, isTeamBoard }) => {
           </button>
         )}
 
+        {/* GitHub link */}
+        {isTeamBoard && ghConnected && (
+          <div style={s.ghSection}>
+            <label style={s.label}>GitHub</label>
+            {ghError && <div style={s.ghError}>{ghError}</div>}
+            {ghLink.number ? (
+              <div style={s.ghLinked}>
+                <a style={s.ghBadge} href={ghLink.url} target="_blank" rel="noreferrer">
+                  <span style={{ ...s.ghDot, backgroundColor: ghLink.state === 'closed' ? 'var(--priority-high)' : 'var(--priority-low)' }} />
+                  Issue #{ghLink.number}
+                  <span style={s.ghState}>{ghLink.state}</span>
+                </a>
+                {canEdit && (
+                  <button style={s.ghUnlink} onClick={handleUnlink} disabled={ghBusy}>Unlink</button>
+                )}
+              </div>
+            ) : canEdit ? (
+              <div style={s.ghActions}>
+                <input
+                  style={{ ...s.input, flex: '0 0 130px' }}
+                  placeholder="Issue #"
+                  value={issueInput}
+                  onChange={e => setIssueInput(e.target.value.replace(/[^0-9]/g, ''))}
+                  onKeyDown={e => e.key === 'Enter' && handleLinkIssue()}
+                />
+                <button style={s.ghLinkBtn} onClick={handleLinkIssue} disabled={ghBusy}>Link</button>
+                <button style={s.ghCreateBtn} onClick={handleCreateIssue} disabled={ghBusy}>
+                  {ghBusy ? '...' : 'Create issue'}
+                </button>
+              </div>
+            ) : (
+              <p style={s.noComments}>No issue linked.</p>
+            )}
+          </div>
+        )}
+
         <div style={s.divider} />
 
         {/* Comments */}
@@ -210,6 +297,16 @@ const s = {
     width: '100%', maxWidth: '510px', maxHeight: '90vh', overflowY: 'auto',
     boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
   },
+  ghSection: { marginTop: '1.1rem' },
+  ghError: { backgroundColor: 'var(--danger-soft)', color: 'var(--danger)', padding: '0.45rem 0.65rem', borderRadius: 7, fontSize: '0.78rem', marginBottom: '0.5rem' },
+  ghLinked: { display: 'flex', alignItems: 'center', gap: '0.6rem' },
+  ghBadge: { display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.4rem 0.7rem', borderRadius: 8, border: '1px solid var(--border)', backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)', fontSize: '0.82rem', fontWeight: 600, textDecoration: 'none' },
+  ghDot: { width: 8, height: 8, borderRadius: '50%' },
+  ghState: { fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' },
+  ghUnlink: { padding: '0.35rem 0.7rem', borderRadius: 7, border: '1px solid var(--border)', backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '0.76rem', fontWeight: 600, cursor: 'pointer' },
+  ghActions: { display: 'flex', gap: '0.5rem', alignItems: 'center' },
+  ghLinkBtn: { padding: '0.55rem 0.9rem', borderRadius: 8, border: '1px solid var(--accent-border)', backgroundColor: 'var(--accent-soft)', color: 'var(--accent)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
+  ghCreateBtn: { padding: '0.55rem 0.9rem', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))', color: '#fff', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
   modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' },
   modalHeaderLeft: { display: 'flex', alignItems: 'center', gap: '0.55rem' },
   priorityDot: { width: '9px', height: '9px', borderRadius: '50%', flexShrink: 0 },

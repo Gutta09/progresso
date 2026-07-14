@@ -190,7 +190,7 @@ const s = {
     width: '34px', height: '34px', borderRadius: '9px',
     background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#fff', fontWeight: '800', fontSize: '1rem', boxShadow: '0 4px 14px rgba(59,130,246,0.4)',
+    color: '#fff', fontWeight: '800', fontSize: '1rem', boxShadow: '0 4px 14px rgba(79,70,229,0.4)',
   },
   logo: {
     fontSize: '1.6rem', fontWeight: '800', color: 'var(--text-primary)',
@@ -215,7 +215,7 @@ const s = {
     background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))', color: '#fff',
     border: 'none', borderRadius: '9px', fontSize: '0.9rem', fontWeight: '600',
     marginTop: '0.5rem', cursor: 'pointer', letterSpacing: '0.01em',
-    boxShadow: '0 4px 16px rgba(59,130,246,0.3)',
+    boxShadow: '0 4px 16px rgba(79,70,229,0.3)',
   },
   btnContent: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' },
   spinner: {
@@ -233,7 +233,7 @@ const s = {
   },
   choiceCardActive: {
     border: '1.5px solid var(--accent)', backgroundColor: 'var(--accent-soft)',
-    boxShadow: '0 0 16px rgba(59,130,246,0.15)',
+    boxShadow: '0 0 16px rgba(79,70,229,0.15)',
   },
   choiceTitle: { fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-primary)', textAlign: 'center' },
   choiceDesc:  { fontSize: '0.67rem', color: 'var(--text-muted)', textAlign: 'center' },

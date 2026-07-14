@@ -49,6 +49,12 @@ const IconCheck = () => (
     <polyline points="20 6 9 17 4 12"/>
   </svg>
 )
+const IconRepo = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
+    <path d="M18 9a9 9 0 01-9 9"/>
+  </svg>
+)
 
 const Navbar = () => {
   const { user, logout, workspace, switchWorkspace, refreshUser } = useAuth()
@@ -114,6 +120,7 @@ const Navbar = () => {
 
   const isMyTasks = location.pathname === '/my-tasks'
   const isReport  = location.pathname === '/report'
+  const isRepo    = location.pathname === '/repo'
   const isAdmin   = user?.role === 'admin'
   const workspaceLabel = workspace === 'team' ? 'Team' : 'Individual'
 
@@ -180,6 +187,17 @@ const Navbar = () => {
             <IconTasks />
             <span style={{ marginLeft: 5 }}>My Tasks</span>
           </button>
+
+          {/* Repo (team only) */}
+          {workspace === 'team' && (
+            <button
+              style={{ ...s.navBtn, ...(isRepo ? s.navBtnActive : {}) }}
+              onClick={() => navigate('/repo')}
+            >
+              <IconRepo />
+              <span style={{ marginLeft: 5 }}>Repo</span>
+            </button>
+          )}
 
           {/* Report (admin + team only) */}
           {isAdmin && workspace === 'team' && (
@@ -283,7 +301,7 @@ const s = {
     background: 'linear-gradient(135deg, var(--avatar-grad-start), var(--avatar-grad-end))',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#fff', fontWeight: '800', fontSize: '0.85rem',
-    boxShadow: '0 2px 8px rgba(59,130,246,0.35)',
+    boxShadow: '0 2px 8px rgba(79,70,229,0.35)',
   },
   logoText: {
     fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.01em',

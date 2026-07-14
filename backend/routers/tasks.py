@@ -7,6 +7,7 @@ import auth
 from datetime import datetime
 from activity_helper import log_event
 from permissions import check_board_access
+import github_sync
 
 router = APIRouter()
 
@@ -180,6 +181,12 @@ def move_task(
 
     log_event(db, new_col.board_id, current_user.user_id, "task_moved",
               f"{current_user.username} moved '{task.title}' to '{new_col.col_name}'")
+
+    # progresso -> GitHub: close/reopen a linked issue based on the new column.
+    if board.team_id and task.github_issue_number:
+        team = db.query(models.Team).filter(models.Team.team_id == board.team_id).first()
+        github_sync.on_task_moved(db, task, new_col, team)
+        db.refresh(task)
 
     return task
 
