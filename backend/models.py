@@ -21,7 +21,14 @@ class Team(Base):
     team_name = Column(String, nullable=False)
     invite_code = Column(String, unique=True, nullable=False)
 
-    members = relationship("User", back_populates="team")
+    # ── GitHub integration (one connected repo per team) ──
+    github_repo = Column(String, nullable=True)              # "owner/name"
+    github_token_encrypted = Column(String, nullable=True)   # Fernet ciphertext
+    github_connected_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+    github_connected_at = Column(DateTime, nullable=True)
+    github_webhook_secret = Column(String, nullable=True)    # for signed webhook sync
+
+    members = relationship("User", back_populates="team", foreign_keys="User.team_id")
     boards = relationship("Board", back_populates="team")
 
 
@@ -35,7 +42,7 @@ class User(Base):
     role = Column(Enum(RoleEnum), default=RoleEnum.member)
     team_id = Column(Integer, ForeignKey("teams.team_id"), nullable=True)
 
-    team = relationship("Team", back_populates="members")
+    team = relationship("Team", back_populates="members", foreign_keys=[team_id])
     comments = relationship("Comment", back_populates="user")
     assigned_tasks = relationship("Task", back_populates="assigned_user")
 
@@ -75,6 +82,11 @@ class Task(Base):
     due_date = Column(Date, nullable=True)
     column_id = Column(Integer, ForeignKey("board_columns.column_id"), nullable=False)
     assigned_to = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+
+    # ── GitHub issue/PR link ──
+    github_issue_number = Column(Integer, nullable=True)
+    github_issue_url = Column(String, nullable=True)
+    github_issue_state = Column(String, nullable=True)  # "open" | "closed"
 
     column = relationship("BoardColumn", back_populates="tasks")
     assigned_user = relationship("User", back_populates="assigned_tasks")
@@ -116,7 +128,7 @@ class ActivityLog(Base):
 
     log_id = Column(Integer, primary_key=True, index=True)
     event_type = Column(String)        # e.g. "task_created"
-    description = Column(String)       # e.g. "ayush created task 'Fix login bug'"
+    description = Column(String)       # e.g. "name created task 'Fix login bug'"
     board_id = Column(Integer, ForeignKey("boards.board_id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)

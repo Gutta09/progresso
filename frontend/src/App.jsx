@@ -9,6 +9,7 @@ import Board from './pages/Board'
 import Profile from './pages/Profile'
 import MyTasks from './pages/MyTasks'
 import Report from './pages/Report'
+import Repo from './pages/Repo'
 
 const App = () => {
   return (
@@ -23,6 +24,7 @@ const App = () => {
           <Route path="/profile"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/my-tasks"  element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
           <Route path="/report"    element={<ProtectedRoute><Report /></ProtectedRoute>} />
+          <Route path="/repo"      element={<ProtectedRoute><Repo /></ProtectedRoute>} />
           <Route path="*"          element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>

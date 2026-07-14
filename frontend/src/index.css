@@ -19,10 +19,10 @@
   --text-muted:  #64748B;
   --text-inverse:#0F172A;
 
-  --accent:      #3B82F6;
-  --accent-hover:#2563EB;
-  --accent-soft: rgba(59,130,246,0.12);
-  --accent-border:rgba(59,130,246,0.3);
+  --accent:      #6366F1;
+  --accent-hover:#4F46E5;
+  --accent-soft: rgba(99,102,241,0.13);
+  --accent-border:rgba(99,102,241,0.32);
 
   --success:     #10B981;
   --success-soft:rgba(16,185,129,0.12);
@@ -35,8 +35,8 @@
   --priority-medium:#F59E0B; --priority-medium-soft:rgba(245,158,11,0.1);--priority-medium-border:rgba(245,158,11,0.25);
   --priority-high:#EF4444;   --priority-high-soft:rgba(239,68,68,0.1);   --priority-high-border:rgba(239,68,68,0.25);
 
-  --avatar-grad-start:#3B82F6;
-  --avatar-grad-end:  #1D4ED8;
+  --avatar-grad-start:#4F46E5;
+  --avatar-grad-end:  #4338CA;
   --overlay: rgba(0,0,0,0.65);
 
   --shadow-sm:   0 1px 3px rgba(0,0,0,0.3);
@@ -56,10 +56,10 @@
   --text-muted:  #64748B;
   --text-inverse:#F8FAFC;
 
-  --accent:      #2563EB;
-  --accent-hover:#1D4ED8;
-  --accent-soft: rgba(37,99,235,0.08);
-  --accent-border:rgba(37,99,235,0.25);
+  --accent:      #4F46E5;
+  --accent-hover:#4338CA;
+  --accent-soft: rgba(79,70,229,0.08);
+  --accent-border:rgba(79,70,229,0.24);
 
   --success:     #059669;
   --success-soft:rgba(5,150,105,0.08);
@@ -72,8 +72,8 @@
   --priority-medium:#D97706; --priority-medium-soft:rgba(217,119,6,0.08);--priority-medium-border:rgba(217,119,6,0.25);
   --priority-high:#DC2626;   --priority-high-soft:rgba(220,38,38,0.08);  --priority-high-border:rgba(220,38,38,0.25);
 
-  --avatar-grad-start:#2563EB;
-  --avatar-grad-end:  #1D4ED8;
+  --avatar-grad-start:#4F46E5;
+  --avatar-grad-end:  #4338CA;
   --overlay: rgba(15,23,42,0.45);
 
   --shadow-sm:   0 1px 3px rgba(15,23,42,0.06);
@@ -109,7 +109,7 @@ input::placeholder, textarea::placeholder { color: var(--text-muted); }
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
 }
 
 input:-webkit-autofill,
